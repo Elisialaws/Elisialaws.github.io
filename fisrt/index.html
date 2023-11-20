@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="zh">
+  <head>
+    <title>Fisrt // Elysia</title>
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <meta charset="utf-8" />
+    <meta name="generator" content="Hugo 0.114.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="author" content="Sulv" />
+    <meta name="description" content="" />
+    <link rel="stylesheet" href="/css/main.min.3c3c186cd62e563ad6e2f00a89dbee656ab912d1d46f856b5605dd0232521e2a.css" />
+
+    
+    <meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Fisrt"/>
+<meta name="twitter:description" content="hello //哈夫曼树 #include&lt;bits/stdc&#43;&#43;.h&gt; using namespace std; struct node { char val; //字符 int frequency; //频率 int priority; //优先级 node* left; node* right; node(char c,int fre,int pri,node l=NULL,node r=NULL):val(c),frequency(fre),priority(pri),left(l),right(r) {} node(){} }; struct Cmp { //先按字符出现的频率排序，如果相同就按优"/>
+
+    <meta property="og:title" content="Fisrt" />
+<meta property="og:description" content="hello //哈夫曼树 #include&lt;bits/stdc&#43;&#43;.h&gt; using namespace std; struct node { char val; //字符 int frequency; //频率 int priority; //优先级 node* left; node* right; node(char c,int fre,int pri,node l=NULL,node r=NULL):val(c),frequency(fre),priority(pri),left(l),right(r) {} node(){} }; struct Cmp { //先按字符出现的频率排序，如果相同就按优" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://elisialaws.github.io/fisrt/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2023-08-24T19:43:29+08:00" />
+<meta property="article:modified_time" content="2023-08-24T19:43:29+08:00" />
+
+
+  </head>
+  <body>
+    <header class="app-header">
+      <a href="https://elisialaws.github.io/"><img class="app-header-avatar" src="/avatar.jpg" alt="Sulv" /></a>
+      <span class="app-header-title">Elysia</span>
+      <nav class="app-header-menu">
+          <a class="app-header-menu-item" href="search">🔍搜索</a>
+             - 
+          
+          <a class="app-header-menu-item" href="/">🏠主页</a>
+             - 
+          
+          <a class="app-header-menu-item" href="posts">📚文章</a>
+             - 
+          
+          <a class="app-header-menu-item" href="archives/">⏱时间轴</a>
+             - 
+          
+          <a class="app-header-menu-item" href="tags">🔖标签</a>
+             - 
+          
+          <a class="app-header-menu-item" href="about">🙋🏻‍♂️关于</a>
+             - 
+          
+          <a class="app-header-menu-item" href="links">🤝友链</a>
+      </nav>
+      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc vehicula turpis sit amet elit pretium.</p>
+    </header>
+    <main class="app-container">
+      
+  <article class="post">
+    <header class="post-header">
+      <h1 class ="post-title">Fisrt</h1>
+      <div class="post-meta">
+        <div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-calendar">
+  <title>calendar</title>
+  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>
+</svg>
+          Aug 24, 2023
+        </div>
+        <div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-clock">
+  <title>clock</title>
+  <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>
+</svg>
+          2 min read
+        </div>
+      </div>
+    </header>
+    <div class="post-content">
+      <h1 id="hello">hello</h1>
+<p>//哈夫曼树
+#include&lt;bits/stdc++.h&gt;
+using namespace std;
+struct node
+{
+char val; //字符
+int frequency; //频率
+int priority;  //优先级
+node* left;
+node* right;
+node(char c,int fre,int pri,node <em>l=NULL,node <em>r=NULL):val(c),frequency(fre),priority(pri),left(l),right(r) {}
+node(){}
+};
+struct Cmp
+{                                     //先按字符出现的频率排序，如果相同就按优先级从小到大排列
+bool operator()( const node</em> a,const node</em> b)
+{
+if (a-&gt;frequency != b-&gt;frequency)
+return a-&gt;frequency &gt; b-&gt;frequency;
+else
+return a-&gt;priority &gt; b-&gt;priority;
+}
+};                  <br>
+unordered_map&lt;char, int&gt; TextFrequent, TextPriority;        //字符优先级和频率                        <br>
+priority_queue&lt;node*, vector&lt;node*&gt;, Cmp&gt; tree, encode;
+map&lt;char, vector<int>&gt; codes;                        //每个字符对应的编码
+vector<int> visit;                                    //遍历哈夫曼树生成每个字符的编码
+void dfs(node* root)                          <br>
+{
+if (root)//遍历哈夫曼树，为每个字符生成编码
+{
+if (islower(root-&gt;val))//是小写字符
+codes[root-&gt;val] = visit;
+visit.push_back(0);
+dfs(root-&gt;left);
+visit.pop_back();
+visit.push_back(1);
+dfs(root-&gt;right);
+visit.pop_back();
+}
+}
+void translation(string &amp;code)
+{
+vector<char> transform;
+node* root = tree.top();
+bool flag = true;//是否合法
+for (int i = 0; i &lt; code.size(); i++)
+{
+if (code[i] == &lsquo;0&rsquo;)
+root = root-&gt;left;
+else
+root = root-&gt;right;
+if ((i == (code.size() - 1)) &amp;&amp; (root-&gt;val==&rsquo;<em>&rsquo;))
+flag = false;
+if (islower(root-&gt;val))
+{
+transform.push_back(root-&gt;val);
+root = tree.top();//找下一个字符
+}
+}
+if (flag) {
+for (char t : transform)
+cout &laquo; t;
+}
+else cout &laquo; &ldquo;INVALID&rdquo;;
+cout &laquo; endl;
+}
+int main()
+{
+string text, code1, code2;
+cin &raquo; text &raquo; code1 &raquo; code2;
+int index=0;//优先级
+for (int i = 0; i &lt; text.size(); i++) //统计字符出现的频率和优先级
+{
+TextFrequent[text[i]]++;
+if (!TextPriority[text[i]])
+TextPriority[text[i]] = index++;
+}
+for (auto temp : TextFrequent)
+{
+node</em> tmp = new node(temp.first,temp.second,TextPriority[temp.first]);//构造节点
+tree.push(tmp);
+encode.push(tmp);
+}
+int sum = 0;//记录每个字符编码后的长度
+while (tree.size() != 1) //利用优先队列构造哈夫曼树
+{
+node* a = tree.top();
+tree.pop();
+node* b = tree.top();
+tree.pop();
+node* tmp = new node(&rsquo;<em>&rsquo;,a-&gt;frequency+b-&gt;frequency,index,a,b);
+index++;
+tree.push(tmp);
+sum += tmp-&gt;frequency;
+}
+cout &laquo; text.size() &laquo; &quot; &ldquo;;//输出字符长度
+int sizes = (sum % 8 == 0) ? sum / 8 : sum / 8 + 1;
+cout &laquo; sizes&laquo; endl;
+node</em> root = tree.top();
+dfs(root);
+while (!encode.empty())//输出所有字符的编码,encode利用字符优先级来进行输出
+{
+char tmp = encode.top()-&gt;val;
+cout &laquo; tmp &laquo; &ldquo;:&rdquo;;
+for (int num : codes[tmp])
+cout &laquo; num;
+cout &laquo; endl;
+encode.pop();
+}
+translation(code1);
+translation(code2);
+}</p>
+
+    </div>
+    <div class="post-footer">
+      
+    </div>
+  </article>
+
+    </main>
+  </body>
+</html>
