@@ -13,7 +13,7 @@
       <pubDate>Thu, 24 Aug 2023 19:43:29 +0800</pubDate>
       
       <guid>https://elisialaws.github.io/fisrt/</guid>
-      <description>hello //哈夫曼树 #include&amp;lt;bits/stdc++.h&amp;gt; using namespace std; struct node { char val; //字符 int frequency; //频率 int priority; //优先级 node* left; node* right; node(char c,int fre,int pri,node l=NULL,node r=NULL):val(c),frequency(fre),priority(pri),left(l),right(r) {} node(){} }; struct Cmp { //先按字符出现的频率排序，如果相同就按优</description>
+      <description>hello 夜幕降下，天穹市的霓虹灯闪耀着绚丽的光彩，光芒透过落地窗映在一尘不染的地板上。“琪亚娜，琪亚娜，你睡了吗？”我立于宽大的席梦思床前，轻轻地</description>
     </item>
     
   </channel>

@@ -13,10 +13,10 @@
     
     <meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Fisrt"/>
-<meta name="twitter:description" content="hello //哈夫曼树 #include&lt;bits/stdc&#43;&#43;.h&gt; using namespace std; struct node { char val; //字符 int frequency; //频率 int priority; //优先级 node* left; node* right; node(char c,int fre,int pri,node l=NULL,node r=NULL):val(c),frequency(fre),priority(pri),left(l),right(r) {} node(){} }; struct Cmp { //先按字符出现的频率排序，如果相同就按优"/>
+<meta name="twitter:description" content="hello 夜幕降下，天穹市的霓虹灯闪耀着绚丽的光彩，光芒透过落地窗映在一尘不染的地板上。“琪亚娜，琪亚娜，你睡了吗？”我立于宽大的席梦思床前，轻轻地"/>
 
     <meta property="og:title" content="Fisrt" />
-<meta property="og:description" content="hello //哈夫曼树 #include&lt;bits/stdc&#43;&#43;.h&gt; using namespace std; struct node { char val; //字符 int frequency; //频率 int priority; //优先级 node* left; node* right; node(char c,int fre,int pri,node l=NULL,node r=NULL):val(c),frequency(fre),priority(pri),left(l),right(r) {} node(){} }; struct Cmp { //先按字符出现的频率排序，如果相同就按优" />
+<meta property="og:description" content="hello 夜幕降下，天穹市的霓虹灯闪耀着绚丽的光彩，光芒透过落地窗映在一尘不染的地板上。“琪亚娜，琪亚娜，你睡了吗？”我立于宽大的席梦思床前，轻轻地" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://elisialaws.github.io/fisrt/" /><meta property="article:section" content="post" />
 <meta property="article:published_time" content="2023-08-24T19:43:29+08:00" />
@@ -69,125 +69,51 @@
   <title>clock</title>
   <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>
 </svg>
-          2 min read
+          6 min read
         </div>
       </div>
     </header>
     <div class="post-content">
       <h1 id="hello">hello</h1>
-<p>//哈夫曼树
-#include&lt;bits/stdc++.h&gt;
-using namespace std;
-struct node
-{
-char val; //字符
-int frequency; //频率
-int priority;  //优先级
-node* left;
-node* right;
-node(char c,int fre,int pri,node <em>l=NULL,node <em>r=NULL):val(c),frequency(fre),priority(pri),left(l),right(r) {}
-node(){}
-};
-struct Cmp
-{                                     //先按字符出现的频率排序，如果相同就按优先级从小到大排列
-bool operator()( const node</em> a,const node</em> b)
-{
-if (a-&gt;frequency != b-&gt;frequency)
-return a-&gt;frequency &gt; b-&gt;frequency;
-else
-return a-&gt;priority &gt; b-&gt;priority;
-}
-};                  <br>
-unordered_map&lt;char, int&gt; TextFrequent, TextPriority;        //字符优先级和频率                        <br>
-priority_queue&lt;node*, vector&lt;node*&gt;, Cmp&gt; tree, encode;
-map&lt;char, vector<int>&gt; codes;                        //每个字符对应的编码
-vector<int> visit;                                    //遍历哈夫曼树生成每个字符的编码
-void dfs(node* root)                          <br>
-{
-if (root)//遍历哈夫曼树，为每个字符生成编码
-{
-if (islower(root-&gt;val))//是小写字符
-codes[root-&gt;val] = visit;
-visit.push_back(0);
-dfs(root-&gt;left);
-visit.pop_back();
-visit.push_back(1);
-dfs(root-&gt;right);
-visit.pop_back();
-}
-}
-void translation(string &amp;code)
-{
-vector<char> transform;
-node* root = tree.top();
-bool flag = true;//是否合法
-for (int i = 0; i &lt; code.size(); i++)
-{
-if (code[i] == &lsquo;0&rsquo;)
-root = root-&gt;left;
-else
-root = root-&gt;right;
-if ((i == (code.size() - 1)) &amp;&amp; (root-&gt;val==&rsquo;<em>&rsquo;))
-flag = false;
-if (islower(root-&gt;val))
-{
-transform.push_back(root-&gt;val);
-root = tree.top();//找下一个字符
-}
-}
-if (flag) {
-for (char t : transform)
-cout &laquo; t;
-}
-else cout &laquo; &ldquo;INVALID&rdquo;;
-cout &laquo; endl;
-}
-int main()
-{
-string text, code1, code2;
-cin &raquo; text &raquo; code1 &raquo; code2;
-int index=0;//优先级
-for (int i = 0; i &lt; text.size(); i++) //统计字符出现的频率和优先级
-{
-TextFrequent[text[i]]++;
-if (!TextPriority[text[i]])
-TextPriority[text[i]] = index++;
-}
-for (auto temp : TextFrequent)
-{
-node</em> tmp = new node(temp.first,temp.second,TextPriority[temp.first]);//构造节点
-tree.push(tmp);
-encode.push(tmp);
-}
-int sum = 0;//记录每个字符编码后的长度
-while (tree.size() != 1) //利用优先队列构造哈夫曼树
-{
-node* a = tree.top();
-tree.pop();
-node* b = tree.top();
-tree.pop();
-node* tmp = new node(&rsquo;<em>&rsquo;,a-&gt;frequency+b-&gt;frequency,index,a,b);
-index++;
-tree.push(tmp);
-sum += tmp-&gt;frequency;
-}
-cout &laquo; text.size() &laquo; &quot; &ldquo;;//输出字符长度
-int sizes = (sum % 8 == 0) ? sum / 8 : sum / 8 + 1;
-cout &laquo; sizes&laquo; endl;
-node</em> root = tree.top();
-dfs(root);
-while (!encode.empty())//输出所有字符的编码,encode利用字符优先级来进行输出
-{
-char tmp = encode.top()-&gt;val;
-cout &laquo; tmp &laquo; &ldquo;:&rdquo;;
-for (int num : codes[tmp])
-cout &laquo; num;
-cout &laquo; endl;
-encode.pop();
-}
-translation(code1);
-translation(code2);
-}</p>
+<p>夜幕降下，天穹市的霓虹灯闪耀着绚丽的光彩，光芒透过落地窗映在一尘不染的地板上。“琪亚娜，琪亚娜，你睡了吗？”我立于宽大的席梦思床前，轻轻地唤道。</p>
+<p>没有回应，只有少女甜美的呼吸声在我耳畔回绕。</p>
+<p>我深吸了一口气，目光缓缓上移，映入眼帘的少女俏皮的下巴，粉嫩的脸颊，在窗外闪烁着的灯光映衬下，少女精致的面容显得分外诱人。我心里不由得升起了邪恶的念头。</p>
+<p>“哼，你们这些小丫头越来越不把本舰长放在眼里了，真以为本舰长好欺负不成。”想起最近几天被恶作剧的不美好回忆，还有被以德莉莎为首的“团伙”经常针对，我就非常不爽，趁着今天任务重琪亚娜睡的早，我偷偷从隔壁房间溜了进来，房门虚掩，大概是琪亚娜太累了没有锁门，不过这样正好方便行事。没错，一定要趁这次机会报复回来才行。</p>
+<p>要怎么报复呢，弄乱她的头发，还是在她脸上乱画，让她早上大发雷霆一顿。</p>
+<p>我暗自思考，不不不，不对，这样岂不是成了小孩子恶作剧，反而凸显不出我的英雄气概，我思衬了一段时间，缓缓褪下纯白的天鹅绒被，轻轻环起琪亚娜的腰身，将她的身子翻转过来，</p>
+<p>睡梦中的琪亚娜似乎是察觉到了什么，发出了几句模糊不清的梦呓，小手抓住被子，皱起了可爱的眉头，我屏住呼吸，看到少女并没有其他反应，才发觉是虚惊一场。</p>
+<p>我握住琪亚娜柔若无骨的小手，轻轻用力，将纯白的绒被褪到琪亚娜的腿弯处。少女玲珑的身姿展现在我眼前，我却置之不见，大手一挥，准备朝琪亚娜的小pg打去，没错，就是这种传统的惩罚方式。</p>
+<p>啪，啪！！！</p>
+<p>休伯利安的清晨，缕缕曦光照下，原本是一片温馨的画面下却出现了不和谐的声音，我睁开眼睛，却感觉胸口一股疼痛感，原本混沌的大脑立刻清醒，忽然看见琪亚娜坐在我的床前。</p>
+<p>“笨蛋舰长，还不快起床！芽衣特地给你这个坏蛋做的营养早餐都要凉了！”琪亚娜嘟起脸蛋，气鼓鼓的说道。</p>
+<p>真是倒霉，好好的美梦居然就这么被破坏掉了，刚刚明明就要……哎，算了，原本气愤的内心在看到琪亚娜气鼓鼓的表情后又不自觉舒缓了下来，哼，本舰长不和这个不讲理的家伙计较。</p>
+<p>我自顾自的想到，也不管自己到底占不占理，总之自己说服了自己。</p>
+<p>诶，等等，早餐。我猛地一惊，忽然想起了前几天晚上和芽衣的一番交流，对啊，今天早上明明要品尝芽衣精心准备的早餐，结果因为昨天任务过于繁忙睡得太死，竟然睡过头了。</p>
+<p>我懊恼的挠了挠头，没想到琪亚娜指着我说道，“还不快起来。芽衣早就猜到笨蛋舰长会睡懒觉，于是就嘱咐我给加热了一下，就在餐厅的桌子上。”</p>
+<p>我叹了口气，三下五除二穿好了衣服。</p>
+<p>“琪亚娜，你确定你只是简单的加热了一下？有没有按时取出？”想起卡斯兰娜家族传统手艺，我还是谨慎的问了一句，尽管只是最简单的重新加热，但之前的琪亚娜似乎也因为各种莫名其妙的原因搞砸了几回。弄的我有些心理阴影，我可不想一顿温馨的早餐变成一片焦糊。</p>
+<p>似乎被指到了痛处，哦不，就是指到了琪亚娜的痛处，琪亚娜像一只被踩到尾巴的小猫一样狠狠地瞪了我一眼，却做出一副微笑的模样，故作温柔的说道，“舰长，再不吃的话早餐又要凉了呢，你怎么能辜负我的一番好意呢？对吧，舰长。”</p>
+<p>说完，琪亚娜还调皮的眨了眨眼睛，可我却不由得感到一丝不正常。</p>
+<p>在琪亚娜的注视下，我只能乖乖的坐在桌前，餐桌上的三明治，沙拉色泽诱人，我先试着简单的品尝了一下。</p>
+<p>呼~~，看来琪亚娜说的没错，至少最简单的加热琪亚娜并没有搞砸，看来也不是一点长进也没有啊，嗯，我是不是可以开始考虑让琪亚娜进厨房了？比如，帮本舰长担任大厨时打下手之类的？</p>
+<p>“怎么样怎么样，舰长，还不错吧？”少女迫不及待的坐在我身边，富有神采的眼眸紧紧盯着我，似乎非常想得到我的夸奖。也难怪，上次我在厨房时，琪亚娜闲着无事过来帮忙，我没想太多，居然放任琪亚娜瞎搞鼓，害的我失去味觉了足足三天！因为这件事琪亚娜被我狠狠地罚了一顿，足足一个月不许吃甜点！</p>
+<p>不过嘛，芽衣太过善良，私下里给琪亚娜“开小灶”，也是令我很无奈，奈何本舰长空有舰长之位，却无实际权能，哎，可悲，可悲！</p>
+<p>见我不说话，琪亚娜将身子靠的离我更近了一些，“舰长快说说嘛，嘿嘿，这可是芽衣和我精心准备的，我也参与了哦！”</p>
+<p>我无奈的笑了笑，伸出大手摸了摸琪亚娜的头，“好了好了，味道嘛，真的很不错，本舰长很满意，不过，你确定你也参与了？”</p>
+<p>“对啊对啊，芽衣昨晚上找了我一起呢！，说要给舰长一份惊喜。”琪亚娜眼神有点飘移，似乎在回想。“虽然只是一些简单的工作啦，而且还出了一些小状况。”琪亚娜小声嘟囔道。</p>
+<p>我笑了笑，“好了，该去找德莉莎了，今天还有任务呢。”</p>
+<p>“哦哦，对了舰长，下次春节我也要一起包饺子，到时候我会特意留给舰长品尝哦！”</p>
+<p>我不禁苦笑，我还有的选吗，老天，为什么要这么折磨我。我不禁想起了上次节日，少女满怀热切的亲手端给我一盘饺子，水灵灵的大眼睛充满希望的注视着我，我僵硬的维持着笑容吃下的往事。</p>
+<p>分割线——————————</p>
+<p>天穹市的某处高楼，德莉莎正在认真的批改文件，琥珀在一旁整理，长光则在汇报着什么，成摞的文件堆叠起来几乎赶得上德莉莎的身高，崩坏神虽已陨落，崩坏灾害逐渐平息，但崩坏并没有完全消失，仍然在全世界范围内造成一定范围的影响，而且还有不少势力在混乱中重建的城市中作威作福，因此，身为天命的大主教，德莉莎依然非常忙碌，少有休憩的时间，也多亏德莉莎的体质原因，否则换做其他人，早被堆积如山的文件和每日十小时以上的高强度工作累倒了。</p>
+<p>还未打招呼，德莉莎已经察觉到了我的到来，对于这位休伯利安的舰长，却整天不务正业，如同甩手掌柜一样将事务推脱给一众下属，自己跑去逍遥自在，德莉莎非常非常的不满意！现在世界虽然已经初步安定，但遗留下来的依然是一大堆烂摊子，这个混蛋舰长这样不负责任，实在是让人气愤。</p>
+<p>于是德莉莎断掉了舰长的工资，还让幽兰黛尔把正在度假的舰长抓回来，强迫舰长每天做任务，把舰长当成免费劳动力，却只发着微薄的薪资。按照德莉莎的说法，叫做“财政紧缺”，身为舰长，应该以身作则，减少不必要的花销。</p>
+<p>“哟，大忙人回来了。”德莉莎揶揄道。</p>
+<p>我没好气的回应道，“我的主教大人，上个月的工资是不是该结算一下了。”估计我最后悔的一件事就是把财政大权撇下不管，被德莉莎接手了，导致现在想去逍遥自在都不行。</p>
+<p>德莉莎脸一红，有些不好意思，似乎在思考克扣舰长工资是不是可以停一停，毕竟堂堂休伯利安舰长，世人眼中的超级大英雄居然如此落魄，传出去怕不是丢光了脸面。</p>
+<p>德莉莎转过身来，可爱娇小的身躯坐在宽大的办公椅上显得有些不和谐，工作时间，德莉莎并没有身着主教神圣端庄的袍服，而是身着连衣裙，看上去秀气而优雅。</p>
+<p>“咳咳，工资那种事情我会发的啦，今天可是有重要的事情要跟你说。”德莉莎严肃了起来，但在她那可爱的脸蛋下，我莫名觉得有些好笑。不过工作毕竟是工作，我也收起了散漫的态度。</p>
+<p>“琥珀，你来跟舰长说一下。”德莉莎喝了一口茶，示意琥珀过来。</p>
 
     </div>
     <div class="post-footer">
