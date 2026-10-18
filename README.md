@@ -1,6 +1,6 @@
 # 汐浅的博客
 
-**https://xiqian-blog.xiqian-blog.workers.dev**
+**主站：<https://xiqian-blog.xiqian-blog.workers.dev> ｜ 镜像（大陆可直连）：<https://elisialaws.github.io>**
 
 个人博客：记录、思考与创造。基于 [Astro 5](https://astro.build/) + [Fuwari](https://github.com/saicaca/fuwari) 主题深度定制，部署在 Cloudflare Workers。
 
@@ -43,6 +43,7 @@ npx wrangler deploy   # 首次需先 npx wrangler login
 ```
 
 - `wrangler.jsonc` 配置了：静态资源 `./dist` + `worker.ts`（阅读量 API）+ D1 数据库 `xiqian-blog-views`
+- 推送 `main` 后 GitHub Actions 会自动构建并发布 GitHub Pages 镜像：<https://elisialaws.github.io/>（大陆可直连；镜像上阅读量计数不可用，会自动隐藏）
 - 首次部署前初始化 D1 表：
   ```powershell
   npx wrangler d1 execute xiqian-blog-views --remote --file=./schema.sql
