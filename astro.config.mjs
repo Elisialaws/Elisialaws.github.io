@@ -26,9 +26,8 @@ import { pluginCustomCopyButton } from "./src/plugins/expressive-code/custom-cop
 
 // https://astro.build/config
 export default defineConfig({
-	// TODO: 部署到 Cloudflare Workers 后，把这里换成实际的线上地址
-	// （一般是 https://xiqian-blog.<你的账户子域>.workers.dev/）
-	site: "https://xiqian-blog.workers.dev/",
+	// 线上地址（Cloudflare Workers，账号子域 xiqian-blog）
+	site: "https://xiqian-blog.xiqian-blog.workers.dev/",
 	base: "/",
 	trailingSlash: "always",
 	i18n: {
