@@ -13,9 +13,7 @@ Hi, I'm **Xiqian**. This is my personal corner of the internet, where I keep art
 ## Find me
 
 - GitHub: <https://github.com/Elisialaws>
-- Email: `hello@example.com`
-
-(The contact details above are placeholders — replace them with your own.)
+- Email: `yunmiaof@outlook.com`
 
 ## About this site
 

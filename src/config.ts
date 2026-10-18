@@ -18,13 +18,13 @@ export const siteConfig: SiteConfig = {
 		fixed: false, // Hide the theme color picker for visitors
 	},
 	banner: {
-		enable: false,
-		src: "assets/images/demo-banner.png", // Relative to the /src directory. Relative to the /public directory if it starts with '/'
-		position: "center", // Equivalent to object-position, only supports 'top', 'center', 'bottom'. 'center' by default
+		enable: true,
+		src: "assets/images/banner.jpg", // 相对 /src 目录；以 / 开头则是相对 /public
+		position: "center", // 相当于 object-position，仅支持 'top' | 'center' | 'bottom'
 		credit: {
-			enable: false, // Display the credit text of the banner image
-			text: "", // Credit text to be displayed
-			url: "", // (Optional) URL link to the original artwork or artist's page
+			enable: true, // 是否显示横幅图片的版权署名
+			text: "Art by SAKIMICHAN", // 署名文字
+			url: "https://www.patreon.com/sakimichan", // 原作者链接
 		},
 	},
 	toc: {
@@ -47,7 +47,7 @@ export const navBarConfig: NavBarConfig = {
 };
 
 export const profileConfig: ProfileConfig = {
-	avatar: "assets/images/demo-avatar.png", // TODO: 换成你的头像（相对 /src 或 /public 的路径）
+	avatar: "assets/images/avatar.jpg", // 头像（相对 /src 或 /public 的路径）
 	name: "汐浅",
 	bio: "你好，我是汐浅。这里记录我的文章、笔记和作品。",
 	bioEn: "Hi, I'm Xiqian. I write about code, notes and side projects here.",
