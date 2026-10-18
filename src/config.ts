@@ -42,18 +42,8 @@ export const siteConfig: SiteConfig = {
 };
 
 export const navBarConfig: NavBarConfig = {
-	links: [
-		LinkPreset.Home,
-		LinkPreset.Archive,
-		LinkPreset.Projects,
-		LinkPreset.About,
-		{
-			name: "GitHub",
-			// TODO: 换成你的 GitHub 主页
-			url: "https://github.com/",
-			external: true, // Show an external link icon and will open in a new tab
-		},
-	],
+	// About lives in the footer; GitHub is an icon next to the language switch
+	links: [LinkPreset.Home, LinkPreset.Archive, LinkPreset.Projects],
 };
 
 export const profileConfig: ProfileConfig = {

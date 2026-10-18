@@ -48,46 +48,61 @@ async function resolveTargetPath(
 	return { path: localePath(target, "/"), paired: false };
 }
 
+export type LangSwitchSide = {
+	/** Root-relative URL of this language's version of the current page (already base-aware) */
+	url: string;
+	/** Tooltip text / aria-label for this side's segment */
+	title: string;
+	/** Whether this side is the real counterpart page (vs. home page fallback) */
+	paired: boolean;
+};
+
 export type LangSwitchInfo = {
 	/** Locale of the page the visitor is on */
 	current: Locale;
-	/** Locale the switch button leads to */
-	target: Locale;
-	/** Root-relative URL of the switch target (already base-aware) */
-	targetUrl: string;
-	/** Tooltip text for the switch button */
-	title: string;
-	/** Button text: "EN" on Chinese pages, "中" on English pages */
-	label: string;
-	/** Whether the target is the real counterpart page (vs. home page fallback) */
-	paired: boolean;
+	/** Chinese side of the 中/EN switch */
+	zh: LangSwitchSide;
+	/** English side of the 中/EN switch */
+	en: LangSwitchSide;
 };
 
 export async function getLangSwitchInfo(pathname: string): Promise<LangSwitchInfo> {
 	const current = getLocaleFromUrl(pathname);
-	const target: Locale = current === "en" ? "zh" : "en";
 	const canonical = normalizePath(pathname, current);
-	const resolved = await resolveTargetPath(canonical, target);
+	const [zhResolved, enResolved] = await Promise.all([
+		resolveTargetPath(canonical, "zh"),
+		resolveTargetPath(canonical, "en"),
+	]);
 
-	const label = target === "en" ? "EN" : "中";
-	let title: string;
+	// Tooltip for the segment of the language the visitor is already on
+	const currentTitle =
+		current === "zh" ? "当前语言：中文" : "Current language: English";
+
+	// Tooltip for the other-language segment, worded in the visitor's language
+	const otherSide = current === "zh" ? enResolved : zhResolved;
+	let otherTitle: string;
 	if (current === "zh") {
-		title = resolved.paired
+		otherTitle = otherSide.paired
 			? "查看英文版"
 			: "暂无英文版，将前往英文首页";
 	} else {
-		title = resolved.paired
+		otherTitle = otherSide.paired
 			? "View the Chinese version"
 			: "No Chinese version yet, going to the Chinese home page";
 	}
 
 	return {
 		current,
-		target,
-		targetUrl: url(resolved.path),
-		title,
-		label,
-		paired: resolved.paired,
+		zh: {
+			url: url(zhResolved.path),
+			title: current === "zh" ? currentTitle : otherTitle,
+			paired: zhResolved.paired,
+		},
+		en: {
+			url: url(enResolved.path),
+			title: current === "en" ? currentTitle : otherTitle,
+			paired: enResolved.paired,
+		},
 	};
 }
 

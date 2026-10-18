@@ -1,6 +1,6 @@
 ---
 import { Icon } from "astro-icon/components";
-import { navBarConfig, siteConfig } from "../config";
+import { navBarConfig, profileConfig, siteConfig } from "../config";
 import { getLinkPresets } from "../constants/link-presets";
 import { getLocaleFromUrl, localePath } from "../i18n/translation";
 import { LinkPreset, type NavBarLink } from "../types/config";
@@ -18,7 +18,7 @@ const locale = getLocaleFromUrl(Astro.url.pathname);
 // Localized site title for the navbar logo
 const siteTitle =
 	locale === "en" ? siteConfig.titleEn || siteConfig.title : siteConfig.title;
-// Where the language switch button should lead (counterpart page or other-language home)
+// Both sides of the 中/EN language switch (counterpart page or fallback home)
 const langSwitch = await getLangSwitchInfo(Astro.url.pathname);
 const homeUrl = url(localePath(locale, "/"));
 
@@ -31,6 +31,15 @@ let links: NavBarLink[] = navBarConfig.links.map(
 		return item;
 	},
 );
+
+// GitHub entry from the profile links: shown as an icon in the button cluster
+const githubLink = profileConfig.links.find((l) =>
+	l.icon.toLowerCase().includes("github"),
+);
+// The mobile menu panel also lists GitHub (the icon is hidden on tiny screens)
+const menuLinks: NavBarLink[] = githubLink
+	? [...links, { name: githubLink.name, url: githubLink.url, external: true }]
+	: links;
 ---
 <div id="navbar" class="z-50 onload-animation">
     <div class="absolute h-8 left-0 right-0 -top-8 bg-[var(--card-bg)] transition"></div> <!-- used for onload animation -->
@@ -55,17 +64,35 @@ let links: NavBarLink[] = navBarConfig.links.map(
                 </a>;
             })}
         </div>
-        <div class="flex">
-            <!-- Language switch: shows target language; full reload (data-no-swup) so that
-                 locale-dependent client components (search, panels) re-initialize -->
-            <a id="lang-switch" href={langSwitch.targetUrl} title={langSwitch.title} aria-label={langSwitch.title} data-no-swup
-               class="btn-plain scale-animation rounded-lg h-11 w-11 font-bold text-[0.875rem] active:scale-90">
-                {langSwitch.label}
-            </a>
+        <div class="flex items-center">
+            <!-- Language switch: 中 | EN segmented control. The current language is
+                 highlighted; the other segment links to the counterpart page. Full reload
+                 (data-no-swup) so locale-dependent client components re-initialize. -->
+            <div id="lang-switch" role="group" aria-label={locale === "zh" ? "语言切换" : "Language"}
+                 class="flex items-center h-8 mx-1 px-0.5 rounded-lg select-none bg-black/[0.04] dark:bg-white/[0.08] text-xs font-bold">
+                {(["zh", "en"] as const).map((key) => {
+                    const side = langSwitch[key];
+                    const active = locale === key;
+                    return <a id={`lang-switch-${key}`} href={side.url} title={side.title} aria-label={side.title}
+                              data-no-swup
+                              aria-current={active ? "true" : undefined}
+                              tabindex={active ? "-1" : undefined}
+                              class="flex items-center justify-center h-7 px-2 rounded-md transition text-black/45 dark:text-white/45 hover:text-[var(--primary)] active:scale-95"
+                    >{key === "zh" ? "中" : "EN"}</a>;
+                })}
+            </div>
+            <!-- GitHub: shown as an icon next to the language & theme switches.
+                 Hidden on very small screens, where the mobile menu still lists it. -->
+            {githubLink && (
+                <a href={githubLink.url} target="_blank" rel="noopener" aria-label="GitHub" title="GitHub"
+                   class="hidden sm:flex btn-plain scale-animation rounded-lg h-11 w-11 active:scale-90">
+                    <Icon name={githubLink.icon} class="text-[1.25rem]"></Icon>
+                </a>
+            )}
             <!--<SearchPanel client:load>-->
             <Search client:only="svelte" lang={locale}></Search>
             {!siteConfig.themeColor.fixed && (
-                    <button aria-label="Display Settings" class="btn-plain scale-animation rounded-lg h-11 w-11 active:scale-90" id="display-settings-switch">
+                    <button aria-label="Display Settings" class="hidden sm:flex btn-plain scale-animation rounded-lg h-11 w-11 active:scale-90" id="display-settings-switch">
                         <Icon name="material-symbols:palette-outline" class="text-[1.25rem]"></Icon>
                     </button>
             )}
@@ -74,30 +101,13 @@ let links: NavBarLink[] = navBarConfig.links.map(
                 <Icon name="material-symbols:menu-rounded" class="text-[1.25rem]"></Icon>
             </button>
         </div>
-        <NavMenuPanel links={links}></NavMenuPanel>
+        <NavMenuPanel links={menuLinks}></NavMenuPanel>
         <DisplaySettings client:only="svelte" lang={locale}></DisplaySettings>
     </div>
 </div>
 
 <script>
-function switchTheme() {
-    if (localStorage.theme === 'dark') {
-        document.documentElement.classList.remove('dark');
-        localStorage.theme = 'light';
-    } else {
-        document.documentElement.classList.add('dark');
-        localStorage.theme = 'dark';
-    }
-}
-
 function loadButtonScript() {
-    let switchBtn = document.getElementById("scheme-switch");
-    if (switchBtn) {
-        switchBtn.onclick = function () {
-            switchTheme()
-        };
-    }
-
     let settingBtn = document.getElementById("display-settings-switch");
     if (settingBtn) {
         settingBtn.onclick = function () {
@@ -121,6 +131,16 @@ function loadButtonScript() {
 
 loadButtonScript();
 </script>
+
+<style>
+    /* Active language segment of the 中/EN switch: highlighted pill, not clickable */
+    #lang-switch a[aria-current="true"] {
+        background: var(--card-bg);
+        color: var(--primary);
+        pointer-events: none;
+        box-shadow: 0 1px 2px rgb(0 0 0 / 0.06);
+    }
+</style>
 
 {import.meta.env.PROD && <script is:inline define:vars={{scriptUrl: url('/pagefind/pagefind.js')}}>
 async function loadPagefind() {

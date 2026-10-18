@@ -302,23 +302,32 @@ setClickOutsideToClose("display-setting", ["display-setting", "display-settings-
 setClickOutsideToClose("nav-menu-panel", ["nav-menu-panel", "nav-menu-switch"])
 setClickOutsideToClose("search-panel", ["search-panel", "search-bar", "search-switch"])
 
-/* Keep the navbar language switch button and <html lang> in sync after SPA navigation.
+/* Keep the navbar language switch (中/EN segments) and <html lang> in sync after SPA navigation.
    #lang-switch-meta lives inside the swup-replaced <main> container, so it always
    describes the page that is currently shown. */
 function updateLangSwitch() {
 	const meta = document.getElementById('lang-switch-meta');
-	const btn = document.getElementById('lang-switch');
 	if (!meta) return;
 	const docLang = meta.dataset.lang;
 	if (docLang) document.documentElement.lang = docLang;
-	if (btn instanceof HTMLAnchorElement) {
-		const { href, title, text } = meta.dataset;
-		if (href) btn.setAttribute('href', href);
+	const activeLocale = docLang === 'en' ? 'en' : 'zh';
+	for (const key of ['zh', 'en'] as const) {
+		const segment = document.getElementById(`lang-switch-${key}`);
+		if (!(segment instanceof HTMLAnchorElement)) continue;
+		const href = meta.dataset[`${key}Href`];
+		const title = meta.dataset[`${key}Title`];
+		if (href) segment.setAttribute('href', href);
 		if (title) {
-			btn.setAttribute('title', title);
-			btn.setAttribute('aria-label', title);
+			segment.setAttribute('title', title);
+			segment.setAttribute('aria-label', title);
 		}
-		if (text) btn.textContent = text;
+		if (key === activeLocale) {
+			segment.setAttribute('aria-current', 'true');
+			segment.setAttribute('tabindex', '-1');
+		} else {
+			segment.removeAttribute('aria-current');
+			segment.removeAttribute('tabindex');
+		}
 	}
 }
 updateLangSwitch();
