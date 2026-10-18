@@ -1,15 +1,19 @@
 ---
 
-import { getEntry, render } from "astro:content";
+import { getCollection, render } from "astro:content";
 import Markdown from "@components/misc/Markdown.astro";
 import I18nKey from "../../i18n/i18nKey";
 import { i18n } from "../../i18n/translation";
 import MainGridLayout from "../../layouts/MainGridLayout.astro";
 
 // English about page: src/content/spec/about.en.md
-// Falls back to the Chinese about page if the English version is missing
+// Falls back to the Chinese about page if the English version is missing.
+// Lookup by the file-based entry id, not by slug/getEntry — see the note in
+// src/content/spec/about.md's page (src/pages/about.astro).
+const specEntries = await getCollection("spec");
 const aboutPost =
-	(await getEntry("spec", "about.en")) ?? (await getEntry("spec", "about"));
+	specEntries.find((entry) => entry.id === "about.en.md") ??
+	specEntries.find((entry) => entry.id === "about.md");
 
 if (!aboutPost) {
 	throw new Error("About page content not found");
