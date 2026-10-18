@@ -1,0 +1,22 @@
+---
+import MainGridLayout from "../layouts/MainGridLayout.astro";
+
+// Cloudflare Workers 的 not_found_handling: "404-page" 会把 dist/404.html
+// 返回给所有未匹配的路径，因此这一个页面同时服务中英文站点（内容双语）。
+---
+
+<MainGridLayout title="404" description="404 - Page not found">
+    <div class="flex w-full rounded-[var(--radius-large)] overflow-hidden relative min-h-32" data-pagefind-ignore>
+        <div class="card-base z-10 px-9 py-10 relative w-full flex flex-col items-start gap-4">
+            <p class="text-6xl font-bold transition text-[var(--primary)]">404</p>
+            <p class="text-75 transition">
+                找不到这个页面，它可能已被移动或删除。<br>
+                The page you're looking for doesn't exist or has been moved.
+            </p>
+            <div class="flex flex-wrap gap-3 mt-2">
+                <a href="/" class="btn-plain scale-animation rounded-lg h-11 px-5 font-bold active:scale-95 inline-flex items-center">回到首页 / Home</a>
+                <a href="/archive/" class="btn-plain scale-animation rounded-lg h-11 px-5 font-bold active:scale-95 inline-flex items-center">归档 / Archive</a>
+            </div>
+        </div>
+    </div>
+</MainGridLayout>
