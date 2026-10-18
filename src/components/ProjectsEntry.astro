@@ -1,0 +1,27 @@
+---
+import { Icon } from "astro-icon/components";
+import I18nKey from "@i18n/i18nKey";
+import { i18n, localePath, type Locale } from "@i18n/translation";
+import { url } from "@utils/url-utils";
+
+interface Props {
+	lang?: Locale;
+	class?: string;
+}
+
+const lang = Astro.props.lang ?? "zh";
+const className = Astro.props.class;
+const label = i18n(I18nKey.projects, lang);
+const href = url(localePath(lang, "/projects/"));
+---
+
+<a href={href} aria-label={label}
+   class:list={[className, "card-base rounded-[var(--radius-large)] px-6 py-4 flex items-center justify-between gap-4 group transition active:scale-[0.99]"]}>
+    <div class="flex items-center gap-3 min-w-0">
+        <div class="h-10 w-10 shrink-0 rounded-lg bg-[var(--btn-regular-bg)] flex items-center justify-center">
+            <Icon name="material-symbols:rocket-launch-outline-rounded" class="text-[1.5rem] text-[var(--primary)]"></Icon>
+        </div>
+        <div class="font-bold text-90 transition group-hover:text-[var(--primary)] truncate">{label}</div>
+    </div>
+    <Icon name="material-symbols:chevron-right-rounded" class="shrink-0 text-[1.75rem] text-[var(--primary)] transition group-hover:translate-x-1"></Icon>
+</a>

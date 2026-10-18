@@ -16,7 +16,7 @@ const args = process.argv.slice(2)
 
 if (args.length === 0) {
   console.error(`Error: No filename argument provided
-Usage: npm run new-post -- <filename>`)
+Usage: pnpm run new-post -- <filename>`)
   process.exit(1) // Terminate the script and return error code 1
 }
 
@@ -42,6 +42,18 @@ if (!fs.existsSync(dirPath)) {
     fs.mkdirSync(dirPath, { recursive: true })
 }
 
+// Bilingual posts are paired by file name:
+//   Chinese: "my-post.md" (leave `lang` empty)
+//   English: "my-post.en.md" — gets `lang: en` automatically. The ".en" suffix
+//            is stripped from the URL, so both languages live at
+//            "/posts/my-post/" and "/en/posts/my-post/".
+// Do NOT add a frontmatter `slug` field: Astro legacy collections use it as
+// the entry ID and the Chinese/English pair would overwrite each other.
+let lang = ""
+if (/\.en\.md$/i.test(fileName)) {
+  lang = "en"
+}
+
 const content = `---
 title: ${args[0]}
 published: ${getDate()}
@@ -49,8 +61,8 @@ description: ''
 image: ''
 tags: []
 category: ''
-draft: false 
-lang: ''
+draft: false
+lang: '${lang}'
 ---
 `
 

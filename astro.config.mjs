@@ -26,9 +26,19 @@ import { pluginCustomCopyButton } from "./src/plugins/expressive-code/custom-cop
 
 // https://astro.build/config
 export default defineConfig({
-	site: "https://fuwari.vercel.app/",
+	// TODO: 部署到 Cloudflare Workers 后，把这里换成实际的线上地址
+	// （一般是 https://xiqian-blog.<你的账户子域>.workers.dev/）
+	site: "https://xiqian-blog.workers.dev/",
 	base: "/",
 	trailingSlash: "always",
+	i18n: {
+		defaultLocale: "zh",
+		locales: ["zh", "en"],
+		routing: {
+			// 中文在根路径 "/"，英文在 "/en/"
+			prefixDefaultLocale: false,
+		},
+	},
 	integrations: [
 		tailwind({
 			nesting: true,
@@ -100,7 +110,15 @@ export default defineConfig({
 			}
 		}),
         svelte(),
-		sitemap(),
+		sitemap({
+			i18n: {
+				defaultLocale: "zh",
+				locales: {
+					zh: "zh-CN",
+					en: "en",
+				},
+			},
+		}),
 	],
 	markdown: {
 		remarkPlugins: [

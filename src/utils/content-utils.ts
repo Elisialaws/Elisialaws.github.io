@@ -1,12 +1,36 @@
 import { type CollectionEntry, getCollection } from "astro:content";
 import I18nKey from "@i18n/i18nKey";
-import { i18n } from "@i18n/translation";
+import { i18n, type Locale } from "@i18n/translation";
 import { getCategoryUrl } from "@utils/url-utils.ts";
 
+/** Whether a post's `lang` frontmatter field belongs to the given site locale.
+ *  Chinese is the default: empty or missing `lang` counts as Chinese. */
+export function postMatchesLocale(
+	lang: string | undefined | null,
+	locale: Locale,
+): boolean {
+	const l = (lang || "").toLowerCase();
+	if (locale === "en") {
+		return l === "en" || l.startsWith("en-") || l.startsWith("en_");
+	}
+	return l === "" || l === "zh" || l.startsWith("zh-") || l.startsWith("zh_");
+}
+
+/** URL slug of a post entry. In legacy collections `id` is the file path
+ *  (e.g. "hello-world.en.md"), so the extension and the ".en" translation
+ *  marker are stripped: the English "<name>.en.md" maps to the same
+ *  "/posts/<name>/" path as its Chinese "<name>.md" counterpart.
+ *  Note: entry.slug cannot be used for this — it is slugified and drops dots
+ *  ("hello-world.en" → "hello-worlden"). */
+export function getPostUrlSlug(entry: { id: string }): string {
+	return entry.id.replace(/\.(md|mdx)$/i, "").replace(/\.en$/i, "");
+}
+
 // // Retrieve posts and sort them by publication date
-async function getRawSortedPosts() {
+async function getRawSortedPosts(locale: Locale = "zh") {
 	const allBlogPosts = await getCollection("posts", ({ data }) => {
-		return import.meta.env.PROD ? data.draft !== true : true;
+		if (import.meta.env.PROD && data.draft === true) return false;
+		return postMatchesLocale(data.lang, locale);
 	});
 
 	const sorted = allBlogPosts.sort((a, b) => {
@@ -17,15 +41,15 @@ async function getRawSortedPosts() {
 	return sorted;
 }
 
-export async function getSortedPosts() {
-	const sorted = await getRawSortedPosts();
+export async function getSortedPosts(locale: Locale = "zh") {
+	const sorted = await getRawSortedPosts(locale);
 
 	for (let i = 1; i < sorted.length; i++) {
-		sorted[i].data.nextSlug = sorted[i - 1].slug;
+		sorted[i].data.nextSlug = getPostUrlSlug(sorted[i - 1]);
 		sorted[i].data.nextTitle = sorted[i - 1].data.title;
 	}
 	for (let i = 0; i < sorted.length - 1; i++) {
-		sorted[i].data.prevSlug = sorted[i + 1].slug;
+		sorted[i].data.prevSlug = getPostUrlSlug(sorted[i + 1]);
 		sorted[i].data.prevTitle = sorted[i + 1].data.title;
 	}
 
@@ -35,12 +59,14 @@ export type PostForList = {
 	slug: string;
 	data: CollectionEntry<"posts">["data"];
 };
-export async function getSortedPostsList(): Promise<PostForList[]> {
-	const sortedFullPosts = await getRawSortedPosts();
+export async function getSortedPostsList(
+	locale: Locale = "zh",
+): Promise<PostForList[]> {
+	const sortedFullPosts = await getRawSortedPosts(locale);
 
 	// delete post.body
 	const sortedPostsList = sortedFullPosts.map((post) => ({
-		slug: post.slug,
+		slug: getPostUrlSlug(post),
 		data: post.data,
 	}));
 
@@ -51,9 +77,10 @@ export type Tag = {
 	count: number;
 };
 
-export async function getTagList(): Promise<Tag[]> {
+export async function getTagList(locale: Locale = "zh"): Promise<Tag[]> {
 	const allBlogPosts = await getCollection<"posts">("posts", ({ data }) => {
-		return import.meta.env.PROD ? data.draft !== true : true;
+		if (import.meta.env.PROD && data.draft === true) return false;
+		return postMatchesLocale(data.lang, locale);
 	});
 
 	const countMap: { [key: string]: number } = {};
@@ -78,14 +105,15 @@ export type Category = {
 	url: string;
 };
 
-export async function getCategoryList(): Promise<Category[]> {
+export async function getCategoryList(locale: Locale = "zh"): Promise<Category[]> {
 	const allBlogPosts = await getCollection<"posts">("posts", ({ data }) => {
-		return import.meta.env.PROD ? data.draft !== true : true;
+		if (import.meta.env.PROD && data.draft === true) return false;
+		return postMatchesLocale(data.lang, locale);
 	});
 	const count: { [key: string]: number } = {};
 	allBlogPosts.forEach((post: { data: { category: string | null } }) => {
 		if (!post.data.category) {
-			const ucKey = i18n(I18nKey.uncategorized);
+			const ucKey = i18n(I18nKey.uncategorized, locale);
 			count[ucKey] = count[ucKey] ? count[ucKey] + 1 : 1;
 			return;
 		}
@@ -107,8 +135,26 @@ export async function getCategoryList(): Promise<Category[]> {
 		ret.push({
 			name: c,
 			count: count[c],
-			url: getCategoryUrl(c),
+			url: getCategoryUrl(c, locale),
 		});
 	}
 	return ret;
+}
+
+/** Check whether a translated counterpart of the post with the given canonical
+ *  URL slug exists in the target locale (used by the language switch button).
+ *  English post slugs carry a ".en" suffix internally; it is stripped here so
+ *  "<name>.en.md" pairs with the Chinese "<name>.md". */
+export async function findPostBySlug(
+	slug: string,
+	locale: Locale,
+): Promise<boolean> {
+	const posts = await getCollection("posts", ({ id, data }) => {
+		if (import.meta.env.PROD && data.draft === true) return false;
+		return (
+			getPostUrlSlug({ id }) === slug &&
+			postMatchesLocale(data.lang, locale)
+		);
+	});
+	return posts.length > 0;
 }

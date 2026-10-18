@@ -1,6 +1,6 @@
 import rss from "@astrojs/rss";
-import { getSortedPosts } from "@utils/content-utils";
-import { url } from "@utils/url-utils";
+import { getSortedPosts, getPostUrlSlug } from "@utils/content-utils";
+import { getPostUrlBySlug } from "@utils/url-utils";
 import type { APIContext } from "astro";
 import MarkdownIt from "markdown-it";
 import sanitizeHtml from "sanitize-html";
@@ -17,7 +17,7 @@ function stripInvalidXmlChars(str: string): string {
 }
 
 export async function GET(context: APIContext) {
-	const blog = await getSortedPosts();
+	const blog = await getSortedPosts("zh");
 
 	return rss({
 		title: siteConfig.title,
@@ -31,12 +31,12 @@ export async function GET(context: APIContext) {
 				title: post.data.title,
 				pubDate: post.data.published,
 				description: post.data.description || "",
-				link: url(`/posts/${post.slug}/`),
+				link: getPostUrlBySlug(getPostUrlSlug(post), "zh"),
 				content: sanitizeHtml(parser.render(cleanedContent), {
 					allowedTags: sanitizeHtml.defaults.allowedTags.concat(["img"]),
 				}),
 			};
 		}),
-		customData: `<language>${siteConfig.lang}</language>`,
+		customData: `<language>zh-cn</language>`,
 	});
 }

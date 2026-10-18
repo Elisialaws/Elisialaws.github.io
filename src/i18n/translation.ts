@@ -20,6 +20,7 @@ const defaultTranslation = en;
 const map: { [key: string]: Translation } = {
 	es: es,
 	en: en,
+	zh: zh_CN,
 	en_us: en,
 	en_gb: en,
 	en_au: en,
@@ -42,7 +43,38 @@ export function getTranslation(lang: string): Translation {
 	return map[lang.toLowerCase()] || defaultTranslation;
 }
 
-export function i18n(key: I18nKey): string {
-	const lang = siteConfig.lang || "en";
-	return getTranslation(lang)[key];
+export function i18n(key: I18nKey, lang?: string): string {
+	const l = lang || siteConfig.lang || "en";
+	return getTranslation(l)[key];
+}
+
+/** Site-level locale used for routing: Chinese has no URL prefix, English lives under /en/ */
+export type Locale = "zh" | "en";
+
+export const DEFAULT_LOCALE: Locale = "zh";
+
+/** Normalize an arbitrary language code to one of the site locales */
+export function toLocale(lang?: string | null): Locale {
+	if (!lang) return DEFAULT_LOCALE;
+	const l = lang.toLowerCase();
+	if (l === "en" || l.startsWith("en-") || l.startsWith("en_")) return "en";
+	if (l === "zh" || l.startsWith("zh-") || l.startsWith("zh_")) return "zh";
+	return DEFAULT_LOCALE;
+}
+
+/** Detect the locale of the current page from its URL path */
+export function getLocaleFromUrl(pathname: string): Locale {
+	return /^\/en(\/|$)/.test(pathname) ? "en" : "zh";
+}
+
+/** Locale -> value for the <html lang="..."> attribute */
+export function localeToHtmlLang(locale: Locale): string {
+	return locale === "en" ? "en" : "zh-CN";
+}
+
+/** Prefix a root-relative path with the locale prefix ("/archive/" -> "/en/archive/" for en) */
+export function localePath(locale: Locale, path: string): string {
+	if (locale !== "en") return path;
+	if (path === "/" || path === "") return "/en/";
+	return `/en${path.startsWith("/") ? path : `/${path}`}`;
 }

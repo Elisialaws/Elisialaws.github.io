@@ -11,6 +11,11 @@ const postsCollection = defineCollection({
 		tags: z.array(z.string()).optional().default([]),
 		category: z.string().optional().nullable().default(""),
 		lang: z.string().optional().default(""),
+		// NOTE: do not add a frontmatter `slug` field here. Astro 5 legacy
+		// collections use the frontmatter slug as the entry ID, so a Chinese
+		// "<name>.md" and its English "<name>.en.md" would overwrite each other
+		// in the content store. Translations are paired by file name instead:
+		// "<name>.md" ↔ "<name>.en.md" (the ".en" is stripped from URLs).
 
 		/* For internal use */
 		prevTitle: z.string().default(""),

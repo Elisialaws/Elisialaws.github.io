@@ -1,0 +1,33 @@
+---
+import ProjectsPage, { type Project } from "@components/ProjectsPage.astro";
+import I18nKey from "@i18n/i18nKey";
+import { i18n } from "@i18n/translation";
+import MainGridLayout from "@layouts/MainGridLayout.astro";
+
+const projects: Project[] = [
+	{
+		name: "Xiqian's Blog (this site)",
+		description:
+			"A personal blog built with Astro, Fuwari and Tailwind: bilingual (Chinese / English) with a language switch, full-text search and light/dark themes, deployed on Cloudflare Workers.",
+		tech: ["Astro", "Svelte", "Tailwind CSS", "Cloudflare Workers"],
+		// TODO: replace with your repository URL
+		link: "https://github.com/",
+	},
+	{
+		name: "Sample Project One",
+		description:
+			"Describe your project in one or two sentences: what problem it solves and what makes it interesting. Placeholder content, replace it with your own work.",
+		tech: ["TypeScript", "Node.js"],
+	},
+	{
+		name: "Sample Project Two",
+		description:
+			"Put a screenshot into public or src/assets and add its path to the image field to show it on top of the card. Placeholder content.",
+		tech: ["Python", "FastAPI"],
+	},
+];
+---
+
+<MainGridLayout title={i18n(I18nKey.projects, "en")} description={i18n(I18nKey.projects, "en")} lang="en">
+    <ProjectsPage projects={projects}></ProjectsPage>
+</MainGridLayout>

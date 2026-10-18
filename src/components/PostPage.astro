@@ -1,9 +1,19 @@
 ---
 import type { CollectionEntry } from "astro:content";
+import type { Locale } from "@i18n/translation";
+import { getPostUrlSlug } from "@utils/content-utils";
 import { getPostUrlBySlug } from "@utils/url-utils";
 import PostCard from "./PostCard.astro";
 
+interface Props {
+	page: {
+		data: CollectionEntry<"posts">[];
+	};
+	lang?: Locale;
+}
+
 const { page } = Astro.props;
+const lang = Astro.props.lang ?? "zh";
 
 let delay = 0;
 const interval = 50;
@@ -17,10 +27,11 @@ const interval = 50;
                 category={entry.data.category}
                 published={entry.data.published}
                 updated={entry.data.updated}
-                url={getPostUrlBySlug(entry.slug)}
+                url={getPostUrlBySlug(getPostUrlSlug(entry), lang)}
                 image={entry.data.image}
                 description={entry.data.description}
                 draft={entry.data.draft}
+                lang={lang}
                 class:list="onload-animation"
                 style={`animation-delay: calc(var(--content-delay) + ${delay++ * interval}ms);`}
         ></PostCard>

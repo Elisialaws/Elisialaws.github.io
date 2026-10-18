@@ -16,7 +16,10 @@ for (const heading of headings) {
 }
 
 const className = Astro.props.class;
-const isPostsRoute = Astro.url.pathname.startsWith(url("/posts/"));
+// TOC only shows on post pages; English posts live under /en/posts/
+const isPostsRoute =
+	Astro.url.pathname.startsWith(url("/posts/")) ||
+	Astro.url.pathname.startsWith(url("/en/posts/"));
 
 const removeTailingHash = (text: string) => {
 	let lastIndexOfHash = text.lastIndexOf("#");

@@ -16,7 +16,9 @@ import {
 	PAGE_WIDTH,
 } from "../constants/constants";
 import { defaultFavicons } from "../constants/icon";
+import { getLocaleFromUrl, localeToHtmlLang } from "../i18n/translation";
 import type { Favicon } from "../types/config";
+import { getAlternateUrls } from "../utils/lang-utils";
 import { pathsEqual, url } from "../utils/url-utils";
 import "katex/dist/katex.css";
 
@@ -28,7 +30,23 @@ interface Props {
 	setOGTypeArticle?: boolean;
 }
 
-let { title, banner, description, lang, setOGTypeArticle } = Astro.props;
+let { title, banner, description, setOGTypeArticle } = Astro.props;
+
+// Locale of the current page is derived from its URL: Chinese lives at "/",
+// English at "/en/". This drives <html lang>, hreflang tags and the RSS link.
+const currentLocale = getLocaleFromUrl(Astro.url.pathname);
+const siteLang = localeToHtmlLang(currentLocale);
+
+const siteBase = Astro.site ?? new URL(Astro.url.origin);
+const alternateUrls = await getAlternateUrls(Astro.url.pathname);
+const alternateAbs = {
+	zh: new URL(alternateUrls.zh, siteBase).href,
+	en: new URL(alternateUrls.en, siteBase).href,
+};
+const rssUrl = new URL(
+	`${currentLocale === "en" ? "en/" : ""}rss.xml`,
+	siteBase,
+).href;
 
 // apply a class to the body element to decide the height of the banner, only used for initial page load
 // Swup can update the body for each page visit, but it's after the page transition, causing a delay for banner height change
@@ -48,20 +66,22 @@ banner = siteConfig.banner.src;
 const enableBanner = siteConfig.banner.enable;
 
 let pageTitle: string;
+const siteTitle =
+	currentLocale === "en"
+		? siteConfig.titleEn || siteConfig.title
+		: siteConfig.title;
+const siteSubtitle =
+	currentLocale === "en"
+		? siteConfig.subtitleEn || siteConfig.subtitle
+		: siteConfig.subtitle;
 if (title) {
-	pageTitle = `${title} - ${siteConfig.title}`;
+	pageTitle = `${title} - ${siteTitle}`;
 } else {
-	pageTitle = `${siteConfig.title} - ${siteConfig.subtitle}`;
+	pageTitle = `${siteTitle} - ${siteSubtitle}`;
 }
 
 const favicons: Favicon[] =
 	siteConfig.favicon.length > 0 ? siteConfig.favicon : defaultFavicons;
-
-// const siteLang = siteConfig.lang.replace('_', '-')
-if (!lang) {
-	lang = `${siteConfig.lang}`;
-}
-const siteLang = lang.replace("_", "-");
 
 const bannerOffsetByPosition = {
 	top: `${BANNER_HEIGHT_EXTEND}vh`,
@@ -84,7 +104,8 @@ const bannerOffset =
 		<meta name="description" content={description || pageTitle}>
 		<meta name="author" content={profileConfig.name}>
 
-		<meta property="og:site_name" content={siteConfig.title}>
+		<meta property="og:site_name" content={siteTitle}>
+		<meta property="og:locale" content={currentLocale === "en" ? "en_US" : "zh_CN"}>
 		<meta property="og:url" content={Astro.url}>
 		<meta property="og:title" content={pageTitle}>
 		<meta property="og:description" content={description || pageTitle}>
@@ -98,6 +119,11 @@ const bannerOffset =
 		<meta property="twitter:url" content={Astro.url}>
 		<meta name="twitter:title" content={pageTitle}>
 		<meta name="twitter:description" content={description || pageTitle}>
+
+		<!-- hreflang alternates for the bilingual site -->
+		<link rel="alternate" hreflang="zh-CN" href={alternateAbs.zh} />
+		<link rel="alternate" hreflang="en" href={alternateAbs.en} />
+		<link rel="alternate" hreflang="x-default" href={alternateAbs.zh} />>
 
 		<meta name="viewport" content="width=device-width" />
 		<meta name="generator" content={Astro.generator} />
@@ -145,7 +171,7 @@ const bannerOffset =
 
 		<slot name="head"></slot>
 
-		<link rel="alternate" type="application/rss+xml" title={profileConfig.name} href={`${Astro.site}rss.xml`}/>
+		<link rel="alternate" type="application/rss+xml" title={siteTitle} href={rssUrl}/>
 
 	</head>
 	<body class=" min-h-screen transition " class:list={[{"lg:is-home": isHomePage, "enable-banner": enableBanner}]}
@@ -276,6 +302,27 @@ setClickOutsideToClose("display-setting", ["display-setting", "display-settings-
 setClickOutsideToClose("nav-menu-panel", ["nav-menu-panel", "nav-menu-switch"])
 setClickOutsideToClose("search-panel", ["search-panel", "search-bar", "search-switch"])
 
+/* Keep the navbar language switch button and <html lang> in sync after SPA navigation.
+   #lang-switch-meta lives inside the swup-replaced <main> container, so it always
+   describes the page that is currently shown. */
+function updateLangSwitch() {
+	const meta = document.getElementById('lang-switch-meta');
+	const btn = document.getElementById('lang-switch');
+	if (!meta) return;
+	const docLang = meta.dataset.lang;
+	if (docLang) document.documentElement.lang = docLang;
+	if (btn instanceof HTMLAnchorElement) {
+		const { href, title, text } = meta.dataset;
+		if (href) btn.setAttribute('href', href);
+		if (title) {
+			btn.setAttribute('title', title);
+			btn.setAttribute('aria-label', title);
+		}
+		if (text) btn.textContent = text;
+	}
+}
+updateLangSwitch();
+
 
 function loadTheme() {
 	const theme = getStoredTheme()
@@ -405,6 +452,7 @@ const setup = () => {
 		}
 	})
 	window.swup.hooks.on('content:replace', initCustomScrollbar)
+	window.swup.hooks.on('page:view', updateLangSwitch)
 	window.swup.hooks.on('visit:start', (visit: {to: {url: string}}) => {
 		// change banner height immediately when a link is clicked
 		const bodyElement = document.querySelector('body')

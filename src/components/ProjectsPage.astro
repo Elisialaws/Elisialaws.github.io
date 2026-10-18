@@ -1,0 +1,65 @@
+---
+import { Icon } from "astro-icon/components";
+import ImageWrapper from "./misc/ImageWrapper.astro";
+
+export interface Project {
+	name: string;
+	description: string;
+	/** Tech stack tags shown as chips */
+	tech: string[];
+	/** External link (live site, repo, ...) */
+	link?: string;
+	/** Optional screenshot; relative to /public or an imported asset */
+	image?: string;
+}
+
+interface Props {
+	projects: Project[];
+	class?: string;
+}
+
+const { projects } = Astro.props;
+const className = Astro.props.class;
+---
+
+<div class:list={[className, "flex flex-col gap-4 mb-4"]}>
+    {projects.map((project, index) => (
+        <div class="card-base rounded-[var(--radius-large)] overflow-hidden transition group"
+             style={`animation-delay: calc(var(--content-delay) + ${index * 60}ms)`}>
+            {project.image && (
+                <div class="w-full max-h-[16rem] overflow-hidden">
+                    <ImageWrapper src={project.image} class="w-full h-full object-cover" alt={`Screenshot of ${project.name}`}></ImageWrapper>
+                </div>
+            )}
+            <div class="p-5 md:p-6">
+                <div class="flex items-start justify-between gap-3 mb-2">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="h-10 w-10 shrink-0 rounded-lg bg-[var(--btn-regular-bg)] flex items-center justify-center">
+                            <Icon name="material-symbols:rocket-launch-outline-rounded" class="text-[1.5rem] text-[var(--primary)]"></Icon>
+                        </div>
+                        <div class="font-bold text-lg md:text-xl text-90 truncate transition group-hover:text-[var(--primary)]">
+                            {project.name}
+                        </div>
+                    </div>
+                    {project.link && (
+                        <a href={project.link} target="_blank" rel="noopener"
+                           aria-label={`Open ${project.name}`}
+                           class="btn-regular rounded-lg h-9 w-9 shrink-0 active:scale-90">
+                            <Icon name="fa6-solid:arrow-up-right-from-square" class="text-[0.875rem]"></Icon>
+                        </a>
+                    )}
+                </div>
+                <div class="text-75 text-sm md:text-[0.95rem] mb-4">{project.description}</div>
+                {project.tech.length > 0 && (
+                    <div class="flex flex-wrap gap-2">
+                        {project.tech.map((tech) => (
+                            <span class="px-2.5 py-1 rounded-md text-xs font-medium bg-[var(--btn-regular-bg)] text-[var(--btn-content)] transition">
+                                {tech}
+                            </span>
+                        ))}
+                    </div>
+                )}
+            </div>
+        </div>
+    ))}
+</div>

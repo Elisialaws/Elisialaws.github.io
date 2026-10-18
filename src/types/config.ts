@@ -3,6 +3,9 @@ import type { AUTO_MODE, DARK_MODE, LIGHT_MODE } from "@constants/constants";
 export type SiteConfig = {
 	title: string;
 	subtitle: string;
+	/** Optional English title/subtitle, shown on /en/ pages */
+	titleEn?: string;
+	subtitleEn?: string;
 
 	lang:
 		| "en"
@@ -48,6 +51,7 @@ export enum LinkPreset {
 	Home = 0,
 	Archive = 1,
 	About = 2,
+	Projects = 3,
 }
 
 export type NavBarLink = {
@@ -64,6 +68,8 @@ export type ProfileConfig = {
 	avatar?: string;
 	name: string;
 	bio?: string;
+	/** Optional English bio, shown on /en/ pages */
+	bioEn?: string;
 	links: {
 		name: string;
 		url: string;

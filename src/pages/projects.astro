@@ -1,0 +1,35 @@
+---
+import ProjectsPage, { type Project } from "@components/ProjectsPage.astro";
+import I18nKey from "@i18n/i18nKey";
+import { i18n } from "@i18n/translation";
+import MainGridLayout from "@layouts/MainGridLayout.astro";
+
+// 作品数据直接写在这里，以后项目多了可以抽成内容集合。
+// description 一句话介绍；tech 是技术栈标签；link 是外部链接；image 可选（截图放 /public 或 /src/assets）。
+const projects: Project[] = [
+	{
+		name: "汐浅的博客（本站）",
+		description:
+			"基于 Astro + Fuwari 与 Tailwind 打造的个人博客：中英双语切换、全文搜索、明暗主题，部署在 Cloudflare Workers 上。",
+		tech: ["Astro", "Svelte", "Tailwind CSS", "Cloudflare Workers"],
+		// TODO: 换成你的仓库地址
+		link: "https://github.com/",
+	},
+	{
+		name: "示例项目一",
+		description:
+			"用一两句话介绍这个作品：它解决了什么问题、有什么亮点。这是占位内容，替换成你的作品即可。",
+		tech: ["TypeScript", "Node.js"],
+	},
+	{
+		name: "示例项目二",
+		description:
+			"把截图放进 public 或 src/assets 后，在页面数组里填上 image 字段就会显示在卡片上方。这也是占位内容。",
+		tech: ["Python", "FastAPI"],
+	},
+];
+---
+
+<MainGridLayout title={i18n(I18nKey.projects, "zh")} description={i18n(I18nKey.projects, "zh")} lang="zh">
+    <ProjectsPage projects={projects}></ProjectsPage>
+</MainGridLayout>

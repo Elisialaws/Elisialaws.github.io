@@ -12,23 +12,34 @@ function joinUrl(...parts: string[]): string {
 	return joined.replace(/\/+/g, "/");
 }
 
-export function getPostUrlBySlug(slug: string): string {
-	return url(`/posts/${slug}/`);
+/** English posts are stored as "<name>.en.md" and share the same URL path as
+ *  their Chinese counterpart ("<name>.md"). All producers of post links use
+ *  `getPostUrlSlug()` from content-utils, which strips the ".en" marker, so
+ *  the plain slug here never needs locale-specific handling. */
+export function getPostUrlBySlug(slug: string, lang: string = "zh"): string {
+	return lang === "en" ? url(`/en/posts/${slug}/`) : url(`/posts/${slug}/`);
 }
 
-export function getTagUrl(tag: string): string {
-	if (!tag) return url("/archive/");
-	return url(`/archive/?tag=${encodeURIComponent(tag.trim())}`);
+export function getArchiveUrl(lang: string = "zh"): string {
+	return lang === "en" ? url("/en/archive/") : url("/archive/");
 }
 
-export function getCategoryUrl(category: string | null): string {
+export function getTagUrl(tag: string, lang: string = "zh"): string {
+	const base = lang === "en" ? "/en/archive/" : "/archive/";
+	if (!tag) return url(base);
+	return url(`${base}?tag=${encodeURIComponent(tag.trim())}`);
+}
+
+export function getCategoryUrl(category: string | null, lang: string = "zh"): string {
+	const base = lang === "en" ? "/en/archive/" : "/archive/";
 	if (
 		!category ||
 		category.trim() === "" ||
-		category.trim().toLowerCase() === i18n(I18nKey.uncategorized).toLowerCase()
+		category.trim().toLowerCase() ===
+			i18n(I18nKey.uncategorized, lang).toLowerCase()
 	)
-		return url("/archive/?uncategorized=true");
-	return url(`/archive/?category=${encodeURIComponent(category.trim())}`);
+		return url(`${base}?uncategorized=true`);
+	return url(`${base}?category=${encodeURIComponent(category.trim())}`);
 }
 
 export function getDir(path: string): string {
