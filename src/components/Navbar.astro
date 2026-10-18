@@ -81,14 +81,6 @@ const menuLinks: NavBarLink[] = githubLink
                     >{key === "zh" ? "中" : "EN"}</a>;
                 })}
             </div>
-            <!-- GitHub: shown as an icon next to the language & theme switches.
-                 Hidden on very small screens, where the mobile menu still lists it. -->
-            {githubLink && (
-                <a href={githubLink.url} target="_blank" rel="noopener" aria-label="GitHub" title="GitHub"
-                   class="hidden sm:flex btn-plain scale-animation rounded-lg h-11 w-11 active:scale-90">
-                    <Icon name={githubLink.icon} class="text-[1.25rem]"></Icon>
-                </a>
-            )}
             <!--<SearchPanel client:load>-->
             <Search client:only="svelte" lang={locale}></Search>
             {!siteConfig.themeColor.fixed && (
@@ -97,6 +89,14 @@ const menuLinks: NavBarLink[] = githubLink
                     </button>
             )}
             <LightDarkSwitch client:only="svelte" lang={locale}></LightDarkSwitch>
+            <!-- GitHub: rightmost icon, to the right of the theme switch.
+                 Hidden on very small screens, where the mobile menu still lists it. -->
+            {githubLink && (
+                <a href={githubLink.url} target="_blank" rel="noopener" aria-label="GitHub" title="GitHub"
+                   class="hidden sm:flex btn-plain scale-animation rounded-lg h-11 w-11 active:scale-90">
+                    <Icon name={githubLink.icon} class="text-[1.25rem]"></Icon>
+                </a>
+            )}
             <button aria-label="Menu" name="Nav Menu" class="btn-plain scale-animation rounded-lg w-11 h-11 active:scale-90 md:!hidden" id="nav-menu-switch">
                 <Icon name="material-symbols:menu-rounded" class="text-[1.25rem]"></Icon>
             </button>

@@ -1,10 +1,22 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "xiqian-blog",
+	"main": "worker.ts",
 	"compatibility_date": "2026-10-01",
-	// 纯静态站点：Cloudflare Workers 直接托管 `pnpm build` 生成的 ./dist
+	// 阅读量计数数据库（D1，建库命令见 README）
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "xiqian-blog-views",
+			"database_id": "b40bbc6e-e483-4e7d-9b1d-dc5b671e493d"
+		}
+	],
+	// 纯静态站点 + 阅读量计数 API：静态资源来自 `pnpm build` 生成的 ./dist，
+	// 非静态请求（/api/views/*）交给 worker.ts
 	"assets": {
 		"directory": "./dist",
+		// 静态资源绑定：worker.ts 通过 env.ASSETS.fetch() 访问（404 页面等）
+		"binding": "ASSETS",
 		// 站点使用带尾斜杠的路径（trailingSlash: "always"），与 Astro 行为一致
 		"html_handling": "auto-trailing-slash",
 		// 未匹配的路径返回自定义 404 页面（dist/404.html）

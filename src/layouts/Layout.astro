@@ -332,6 +332,36 @@ function updateLangSwitch() {
 }
 updateLangSwitch();
 
+/* Page views counter: the widget (ViewsCounter.astro) exists only on post pages.
+   Count each article once per browser session (sessionStorage), keyed by the shared
+   article slug; hide the widget if the API is unavailable (e.g. local dev/preview). */
+function updateViewCounter() {
+	const el = document.querySelector('[data-post-views]');
+	if (!(el instanceof HTMLElement)) return;
+	el.style.display = '';
+	const slug = el.getAttribute('data-slug') || '';
+	const countEl = el.querySelector('.views-count');
+	if (!slug || !(countEl instanceof HTMLElement)) return;
+	const cacheKey = `xiqian-blog:views:${slug}`;
+	const cached = sessionStorage.getItem(cacheKey);
+	if (cached) {
+		countEl.textContent = cached;
+		return;
+	}
+	fetch(`/api/views/${encodeURIComponent(slug)}`)
+		.then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+		.then((data) => {
+			if (typeof data?.count !== 'number') throw new Error('bad response');
+			const text = data.count.toLocaleString();
+			countEl.textContent = text;
+			sessionStorage.setItem(cacheKey, text);
+		})
+		.catch(() => {
+			el.style.display = 'none';
+		});
+}
+updateViewCounter();
+
 
 function loadTheme() {
 	const theme = getStoredTheme()
@@ -462,6 +492,7 @@ const setup = () => {
 	})
 	window.swup.hooks.on('content:replace', initCustomScrollbar)
 	window.swup.hooks.on('page:view', updateLangSwitch)
+	window.swup.hooks.on('page:view', updateViewCounter)
 	window.swup.hooks.on('visit:start', (visit: {to: {url: string}}) => {
 		// change banner height immediately when a link is clicked
 		const bodyElement = document.querySelector('body')

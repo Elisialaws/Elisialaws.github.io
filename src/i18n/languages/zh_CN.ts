@@ -22,6 +22,7 @@ export const zh_CN: Translation = {
 	[Key.wordsCount]: "字",
 	[Key.minuteCount]: "分钟",
 	[Key.minutesCount]: "分钟",
+	[Key.viewsCount]: "次阅读",
 	[Key.postCount]: "篇文章",
 	[Key.postsCount]: "篇文章",
 

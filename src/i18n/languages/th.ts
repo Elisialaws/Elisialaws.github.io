@@ -22,6 +22,7 @@ export const th: Translation = {
 	[Key.wordsCount]: "คำ",
 	[Key.minuteCount]: "นาที",
 	[Key.minutesCount]: "นาที",
+	[Key.viewsCount]: "เข้าชม",
 	[Key.postCount]: "โพสต์",
 	[Key.postsCount]: "โพสต์",
 

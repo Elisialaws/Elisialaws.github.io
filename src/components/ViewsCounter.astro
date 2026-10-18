@@ -1,0 +1,24 @@
+---
+import { Icon } from "astro-icon/components";
+import I18nKey from "@i18n/i18nKey";
+import { i18n, type Locale } from "@i18n/translation";
+
+interface Props {
+	/** Shared article slug (zh + en versions use the same one, see getPostUrlSlug) */
+	slug: string;
+	lang: Locale;
+}
+
+const { slug, lang } = Astro.props;
+
+// The number is filled in by updateViewCounter() in Layout.astro (it runs on
+// initial load and on every swup page:view). The widget hides itself when the
+// counter API is unavailable (e.g. local `pnpm dev`/`pnpm preview`).
+---
+
+<div class="flex flex-row items-center" data-post-views data-slug={slug} data-pagefind-ignore>
+    <div class="transition h-6 w-6 rounded-md bg-black/5 dark:bg-white/10 text-black/50 dark:text-white/50 flex items-center justify-center mr-2">
+        <Icon name="material-symbols:visibility-outline-rounded"></Icon>
+    </div>
+    <div class="text-sm"><span class="views-count">-</span>{" " + i18n(I18nKey.viewsCount, lang)}</div>
+</div>
