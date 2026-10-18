@@ -1,0 +1,13 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "xiqian-blog",
+	"compatibility_date": "2026-10-01",
+	// 纯静态站点：Cloudflare Workers 直接托管 `pnpm build` 生成的 ./dist
+	"assets": {
+		"directory": "./dist",
+		// 站点使用带尾斜杠的路径（trailingSlash: "always"），与 Astro 行为一致
+		"html_handling": "auto-trailing-slash",
+		// 未匹配的路径返回自定义 404 页面（dist/404.html）
+		"not_found_handling": "404-page"
+	}
+}
