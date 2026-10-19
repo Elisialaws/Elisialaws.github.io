@@ -6,6 +6,7 @@ import MainGridLayout from "../layouts/MainGridLayout.astro";
 ---
 
 <MainGridLayout title="404" description="404 - Page not found">
+    <meta slot="head" name="robots" content="noindex" />
     <div class="flex w-full rounded-[var(--radius-large)] overflow-hidden relative min-h-32" data-pagefind-ignore>
         <div class="card-base z-10 px-9 py-10 relative w-full flex flex-col items-start gap-4">
             <p class="text-6xl font-bold transition text-[var(--primary)]">404</p>
