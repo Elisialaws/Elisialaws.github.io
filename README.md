@@ -8,6 +8,7 @@
 
 - **中英双语**：中文在 `/`，英文在 `/en/`；导航栏「中 | EN」开关在同一篇文章的中英版本间精确互跳（文件名配对：`xxx.md` ↔ `xxx.en.md`，两版 URL 相同路径）
 - **全文搜索**：构建时生成 [Pagefind](https://pagefind.app/) 双语索引
+- **评论**：[Giscus](https://giscus.app/)（数据存在 GitHub Discussions 里，无后端、无广告），跟随站点亮/暗主题切换
 - **阅读量统计**：Worker + D1 自建的轻量计数器（`GET /api/views/<slug>`），中英同篇文章合并计数，同一会话内不重复计数
 - **明暗主题**：亮色 / 暗色 / 跟随系统（点击式下拉），主题色可调
 - **作品集**：`/projects` 与 `/en/projects`（数据写在页面数组里，直接编辑即可）
@@ -34,6 +35,18 @@ pnpm new-post my-post   # 新建文章 → src/content/posts/my-post.md
 - 英文版文件名加 `.en` 后缀（`my-post.en.md`），frontmatter 里写 `lang: en`；两版 URL 分别为 `/posts/my-post/` 与 `/en/posts/my-post/`，语言开关会根据文件名自动精确配对
 - **不要**在 frontmatter 写 `slug` 字段（会与 `.en` 配对冲突，详见开发笔记）
 - 文章封面图放 `src/content/posts/<目录>/`，frontmatter 的 `image` 字段引用
+
+## 评论（Giscus）
+
+评论由 Giscus 驱动，数据保存在仓库的 GitHub Discussions 里，站点本身不需要后端。配置在 `src/config.ts` 的 `commentConfig`，组件是 `src/components/Comments.astro`（挂在 `src/pages/posts/[...slug].astro` 与英文版同一位置）。
+
+首次启用需要三步（只需做一次）：
+
+1. 仓库 **Settings → General → Features** 勾选 **Discussions**
+2. 给仓库安装 Giscus App：<https://github.com/apps/giscus>
+3. 打开 <https://giscus.app>，仓库填 `Elisialaws/Elisialaws.github.io`，分类选 `Comments`（没有就新建一个），把生成的 `data-category-id` 填到 `commentConfig.giscus.categoryId`
+
+`categoryId` 为空时，文章页评论区会显示一行配置提示，不会报错。映射方式用 `pathname`：中英文文章路径不同，各自有独立讨论串。
 
 ## 部署（Cloudflare Workers，免费套餐）
 

@@ -11,6 +11,7 @@ import { getDir, getPostUrlBySlug } from "@utils/url-utils";
 import { Icon } from "astro-icon/components";
 import { licenseConfig } from "src/config";
 import ImageWrapper from "../../components/misc/ImageWrapper.astro";
+import Comments from "@components/Comments.astro";
 import PostMetadata from "../../components/PostMeta.astro";
 import ViewsCounter from "@components/ViewsCounter.astro";
 import { profileConfig } from "../../config";
@@ -125,6 +126,8 @@ const jsonLd = {
 
         </div>
     </div>
+
+    <Comments lang="zh" />
 
     <div class="flex flex-col md:flex-row justify-between mb-4 gap-4 overflow-hidden w-full">
         <a href={entry.data.nextSlug ? getPostUrlBySlug(entry.data.nextSlug, "zh") : "#"}

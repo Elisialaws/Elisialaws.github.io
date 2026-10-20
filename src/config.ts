@@ -1,4 +1,5 @@
 import type {
+	CommentConfig,
 	ExpressiveCodeConfig,
 	LicenseConfig,
 	NavBarConfig,
@@ -73,3 +74,34 @@ export const expressiveCodeConfig: ExpressiveCodeConfig = {
 	// Please select a dark theme, as this blog theme currently only supports dark background color
 	theme: "github-dark",
 };
+
+/**
+ * 评论区（Giscus，数据存在 GitHub Discussions 里）
+ *
+ * 启用前需要在 GitHub 上做三件事：
+ * 1. 仓库 Settings → General → Features 勾选 Discussions
+ * 2. 给仓库安装 Giscus App：https://github.com/apps/giscus
+ * 3. 打开 https://giscus.app ，填入仓库 Elisialaws/Elisialaws.github.io，
+ *    分类选一个（例如新建 Comments），把页面生成的
+ *    data-category-id 复制到下面的 categoryId 里
+ *
+ * repoId 已经填好；categoryId 留空时文章页会显示一行配置提示，不会报错。
+ */
+export const commentConfig: CommentConfig = {
+	enable: true,
+	giscus: {
+		repo: "Elisialaws/Elisialaws.github.io",
+		repoId: "R_kgDOVObTYw",
+		category: "Comments",
+		categoryId: "",
+		// mapping 用 pathname：中英文文章路径不同，各自拥有独立讨论串
+		mapping: "pathname",
+		strict: false,
+		reactionsEnabled: true,
+		emitMetadata: false,
+		inputPosition: "top",
+		lang: "zh-CN",
+		loading: "lazy",
+	},
+};
+

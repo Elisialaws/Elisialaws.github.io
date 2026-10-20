@@ -1,4 +1,5 @@
 ---
+import { Icon } from "astro-icon/components";
 import { profileConfig } from "../config";
 import I18nKey from "../i18n/i18nKey";
 import { i18n, localePath, type Locale } from "../i18n/translation";
@@ -13,6 +14,7 @@ const rssHref = url(lang === "en" ? "/en/rss.xml" : "/rss.xml");
 // The About entry lives in the footer (it used to be a navbar link)
 const aboutHref = url(localePath(lang, "/about/"));
 const aboutLabel = i18n(I18nKey.about, lang);
+const aboutHint = lang === "en" ? "About me & this site" : "关于我和这个站";
 
 const currentYear = new Date().getFullYear();
 ---
@@ -21,9 +23,19 @@ const currentYear = new Date().getFullYear();
 <div class="transition border-t border-black/10 dark:border-white/15 my-10 border-dashed mx-32"></div>
 <!--<div class="transition bg-[oklch(92%_0.01_var(&#45;&#45;hue))] dark:bg-black rounded-2xl py-8 mt-4 mb-8 flex flex-col items-center justify-center px-6">-->
 <div class="transition border-dashed border-[oklch(85%_0.01_var(--hue))] dark:border-white/15 rounded-2xl mb-12 flex flex-col items-center justify-center px-6">
-    <div class="transition text-50 text-sm text-center">
+    <!-- 关于：单独一行，做成主色胶囊按钮（原先混在版权行里的小链接） -->
+    <a id="footer-about" href={aboutHref} aria-label={aboutHint}>
+        <span class="footer-about-icon">
+            <Icon name="material-symbols:person-outline-rounded"></Icon>
+        </span>
+        <span>{aboutLabel}</span>
+        <span class="footer-about-arrow">
+            <Icon name="fa6-solid:arrow-right"></Icon>
+        </span>
+    </a>
+
+    <div class="transition text-50 text-sm text-center leading-relaxed">
         &copy; <span id="copyright-year">{currentYear}</span> {profileConfig.name}. All Rights Reserved. /
-        <a class="transition link text-[var(--primary)] font-medium" href={aboutHref}>{aboutLabel}</a> /
         <a class="transition link text-[var(--primary)] font-medium" target="_blank" href={rssHref}>RSS</a> /
         <a class="transition link text-[var(--primary)] font-medium" target="_blank" href={url('sitemap-index.xml')}>Sitemap</a><br>
         Powered by
@@ -31,3 +43,68 @@ const currentYear = new Date().getFullYear();
         <a class="transition link text-[var(--primary)] font-medium" target="_blank" href="https://github.com/saicaca/fuwari">Fuwari</a>
     </div>
 </div>
+
+<style>
+    /* 独立一行的「关于」按钮：主色调淡底 + 主色描边 + 加深的主色文字，保证对比度 */
+    #footer-about {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+        margin-bottom: 1.6rem;
+        padding: 0.7rem 1.75rem;
+        border-radius: 9999px;
+        border: 1px solid color-mix(in oklch, var(--primary) 50%, transparent);
+        background: color-mix(in oklch, var(--primary) 16%, transparent);
+        box-shadow: 0 6px 18px color-mix(in oklch, var(--primary) 18%, transparent);
+        color: oklch(0.42 0.15 var(--hue));
+        font-size: 1.125rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        transition: all 0.25s ease;
+    }
+
+    #footer-about:hover {
+        background: color-mix(in oklch, var(--primary) 26%, transparent);
+        border-color: color-mix(in oklch, var(--primary) 70%, transparent);
+        box-shadow: 0 8px 22px color-mix(in oklch, var(--primary) 28%, transparent);
+        transform: translateY(-2px);
+    }
+
+    #footer-about:active {
+        transform: scale(0.96);
+    }
+
+    :global(.dark) #footer-about {
+        color: oklch(0.85 0.12 var(--hue));
+        background: color-mix(in oklch, var(--primary) 20%, transparent);
+        border-color: color-mix(in oklch, var(--primary) 45%, transparent);
+        box-shadow: 0 6px 18px color-mix(in oklch, var(--primary) 15%, transparent);
+    }
+
+    :global(.dark) #footer-about:hover {
+        background: color-mix(in oklch, var(--primary) 32%, transparent);
+        border-color: color-mix(in oklch, var(--primary) 70%, transparent);
+    }
+
+    #footer-about .footer-about-icon {
+        display: inline-flex;
+        font-size: 1.375rem;
+    }
+
+    #footer-about .footer-about-arrow {
+        display: inline-flex;
+        font-size: 0.75rem;
+        transition: transform 0.25s ease;
+    }
+
+    #footer-about:hover .footer-about-arrow {
+        transform: translateX(4px);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        #footer-about,
+        #footer-about .footer-about-arrow {
+            transition: none;
+        }
+    }
+</style>

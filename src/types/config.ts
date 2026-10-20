@@ -106,3 +106,38 @@ export type BlogPostData = {
 export type ExpressiveCodeConfig = {
 	theme: string;
 };
+
+/**
+ * Giscus 评论配置（基于 GitHub Discussions）。
+ * 取值说明见 https://giscus.app —— 在页面里选好仓库和分类后，
+ * 复制生成的 data-repo-id / data-category-id 填到这里即可。
+ */
+export type GiscusConfig = {
+	/** GitHub 仓库，形如 "owner/repo"（必须是公开仓库） */
+	repo: string;
+	/** 仓库的 node id，形如 "R_kgDOxxxxxx" */
+	repoId: string;
+	/** 讨论分类名称，仅用于显示 */
+	category: string;
+	/** 讨论分类 id，形如 "DIC_kwDOxxxxxx" */
+	categoryId: string;
+	/** 页面与讨论的映射方式，博客用 "pathname" 最稳 */
+	mapping: "pathname" | "url" | "title" | "og:title" | "specific";
+	/** 严格标题匹配，配合 mapping=title 时更准 */
+	strict?: boolean;
+	/** 是否开启表情回应 */
+	reactionsEnabled?: boolean;
+	/** 是否向父窗口发送讨论元数据 */
+	emitMetadata?: boolean;
+	/** 评论框位置 */
+	inputPosition?: "top" | "bottom";
+	/** 界面语言，中文站点用 "zh-CN" */
+	lang?: string;
+	/** 懒加载：滚动到评论区附近才加载 iframe */
+	loading?: "lazy" | "eager";
+};
+
+export type CommentConfig = {
+	enable: boolean;
+	giscus: GiscusConfig;
+};

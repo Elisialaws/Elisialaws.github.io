@@ -49,6 +49,14 @@ export function applyThemeToDocument(theme: LIGHT_DARK_MODE) {
 		"data-theme",
 		expressiveCodeConfig.theme,
 	);
+
+	// Notify listeners that only know about the class (e.g. the Giscus iframe in
+	// Comments.astro) so they can follow the light/dark switch without a reload.
+	window.dispatchEvent(
+		new CustomEvent("xiqian:theme-change", {
+			detail: { theme, dark: document.documentElement.classList.contains("dark") },
+		}),
+	);
 }
 
 export function setTheme(theme: LIGHT_DARK_MODE): void {

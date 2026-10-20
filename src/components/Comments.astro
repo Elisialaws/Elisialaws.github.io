@@ -1,0 +1,169 @@
+---
+import { Icon } from "astro-icon/components";
+import I18nKey from "@i18n/i18nKey";
+import { i18n, type Locale } from "@i18n/translation";
+import { commentConfig } from "@/config";
+
+interface Props {
+	lang?: Locale;
+}
+
+const lang = Astro.props.lang ?? "zh";
+const { enable, giscus } = commentConfig;
+
+// 未填 categoryId 时 giscus 会报错，这里是"缺配置"的兜底提示
+const configured = Boolean(giscus.repo && giscus.repoId && giscus.categoryId);
+
+// 传给前端脚本的参数（前端负责注入 giscus 的 script 并跟随主题切换）
+const options = {
+	repo: giscus.repo,
+	repoId: giscus.repoId,
+	category: giscus.category,
+	categoryId: giscus.categoryId,
+	mapping: giscus.mapping,
+	strict: giscus.strict ?? false,
+	reactionsEnabled: giscus.reactionsEnabled ?? true,
+	emitMetadata: giscus.emitMetadata ?? false,
+	inputPosition: giscus.inputPosition ?? "top",
+	// 中文页面用配置里的语言，英文页面切成 en
+	lang: lang === "en" ? "en" : (giscus.lang ?? "zh-CN"),
+	loading: giscus.loading ?? "lazy",
+};
+---
+
+{enable && (
+    <section class="mb-4 onload-animation" data-pagefind-ignore>
+        <div class="card-base px-6 md:px-9 py-6">
+            <div class="flex flex-row items-center gap-2 mb-5">
+                <div class="transition h-6 w-6 rounded-md bg-black/5 dark:bg-white/10 text-[var(--primary)] flex items-center justify-center">
+                    <Icon name="material-symbols:chat-bubble-outline-rounded"></Icon>
+                </div>
+                <div class="text-lg font-bold text-black/90 dark:text-white/90">
+                    {i18n(I18nKey.comments, lang)}
+                </div>
+            </div>
+
+            {configured ? (
+                <div
+                    class="giscus-host min-h-[8rem]"
+                    data-giscus-host
+                    data-giscus={JSON.stringify(options)}
+                ></div>
+            ) : (
+                <div class="rounded-xl border border-dashed border-black/10 dark:border-white/15 px-4 py-5 text-sm leading-relaxed text-black/60 dark:text-white/60">
+                    {lang === "en" ? (
+                        <>
+                            Comments are not configured yet. Enable <b>Discussions</b> in the GitHub repo,
+                            install the <a class="link text-[var(--primary)]" href="https://github.com/apps/giscus" target="_blank" rel="noopener">Giscus App</a>,
+                            then paste the <code>categoryId</code> from
+                            <a class="link text-[var(--primary)]" href="https://giscus.app" target="_blank" rel="noopener">giscus.app</a>
+                            into <code>src/config.ts</code>.
+                        </>
+                    ) : (
+                        <>
+                            评论区尚未配置。请先在 GitHub 仓库里开启 <b>Discussions</b>，安装
+                            <a class="link text-[var(--primary)]" href="https://github.com/apps/giscus" target="_blank" rel="noopener">Giscus App</a>，
+                            再到 <a class="link text-[var(--primary)]" href="https://giscus.app" target="_blank" rel="noopener">giscus.app</a>
+                            复制 <code>categoryId</code>，填进 <code>src/config.ts</code> 的 <code>commentConfig</code>。
+                        </>
+                    )}
+                </div>
+            )}
+        </div>
+    </section>
+)}
+
+<script>
+	type GiscusOptions = {
+		repo: string;
+		repoId: string;
+		category: string;
+		categoryId: string;
+		mapping: string;
+		strict: boolean;
+		reactionsEnabled: boolean;
+		emitMetadata: boolean;
+		inputPosition: string;
+		lang: string;
+		loading: string;
+	};
+
+	const GISCUS_ORIGIN = "https://giscus.app";
+	const THEME_EVENT = "xiqian:theme-change";
+
+	/** 本站的亮/暗状态由 <html class="dark"> 决定 */
+	function currentTheme(): string {
+		return document.documentElement.classList.contains("dark") ? "dark" : "light";
+	}
+
+	function readOptions(host: HTMLElement): GiscusOptions | null {
+		const raw = host.dataset.giscus;
+		if (!raw) return null;
+		try {
+			return JSON.parse(raw) as GiscusOptions;
+		} catch {
+			return null;
+		}
+	}
+
+	/**
+	 * 注入 giscus 的 client.js。
+	 * Swup 会在站内跳转时替换 <main>，被替换进来的 script 不会执行，
+	 * 所以每次 page:view 都要重新注入一次。
+	 */
+	function mountComments(): void {
+		const host = document.querySelector<HTMLElement>("[data-giscus-host]");
+		if (!host) return;
+		const options = readOptions(host);
+		if (!options || !options.categoryId) return;
+		// 已经是注入过的状态（例如从 swup 缓存里恢复的页面）就不再重复加载
+		if (host.querySelector("iframe.giscus-frame")) return;
+
+		host.innerHTML = "";
+		const script = document.createElement("script");
+		script.src = `${GISCUS_ORIGIN}/client.js`;
+		script.async = true;
+		script.crossOrigin = "anonymous";
+		script.setAttribute("data-repo", options.repo);
+		script.setAttribute("data-repo-id", options.repoId);
+		script.setAttribute("data-category", options.category);
+		script.setAttribute("data-category-id", options.categoryId);
+		script.setAttribute("data-mapping", options.mapping);
+		script.setAttribute("data-strict", options.strict ? "1" : "0");
+		script.setAttribute("data-reactions-enabled", options.reactionsEnabled ? "1" : "0");
+		script.setAttribute("data-emit-metadata", options.emitMetadata ? "1" : "0");
+		script.setAttribute("data-input-position", options.inputPosition);
+		script.setAttribute("data-lang", options.lang);
+		script.setAttribute("data-loading", options.loading);
+		// iframe 内的主题跟随整站：亮色用 light，暗色用 dark
+		script.setAttribute("data-theme", currentTheme());
+		host.appendChild(script);
+	}
+
+	/** 切换亮/暗模式后同步 iframe 里的主题，不用重新加载整个评论区 */
+	function syncTheme(): void {
+		const iframe = document.querySelector<HTMLIFrameElement>("iframe.giscus-frame");
+		if (!(iframe?.contentWindow instanceof Window)) return;
+		iframe.contentWindow.postMessage(
+			{ giscus: { setConfig: { theme: currentTheme() } } },
+			GISCUS_ORIGIN,
+		);
+	}
+
+	function setupSwupHooks(): void {
+		const swup = (window as unknown as { swup?: { hooks: { on: (event: string, cb: () => void) => void } } }).swup;
+		if (!swup?.hooks) return;
+		swup.hooks.on("page:view", mountComments);
+		// 从浏览器前进/后退缓存里恢复时也要补一次
+		window.addEventListener("pageshow", mountComments);
+	}
+
+	window.addEventListener(THEME_EVENT, syncTheme);
+	mountComments();
+
+	if ((window as unknown as { swup?: unknown }).swup) {
+		setupSwupHooks();
+	} else {
+		document.addEventListener("swup:enable", setupSwupHooks);
+	}
+</script>

@@ -10,6 +10,7 @@ import { resolvePostCoverUrl } from "@utils/og-image";
 import { getDir, getPostUrlBySlug } from "@utils/url-utils";
 import { Icon } from "astro-icon/components";
 import ImageWrapper from "@components/misc/ImageWrapper.astro";
+import Comments from "@components/Comments.astro";
 import PostMetadata from "@components/PostMeta.astro";
 import { formatDateToYYYYMMDD } from "@utils/date-utils";
 import { licenseConfig, profileConfig } from "@/config";
@@ -126,6 +127,8 @@ const jsonLd = {
 
         </div>
     </div>
+
+    <Comments lang="en" />
 
     <div class="flex flex-col md:flex-row justify-between mb-4 gap-4 overflow-hidden w-full">
         <a href={entry.data.nextSlug ? getPostUrlBySlug(entry.data.nextSlug, "en") : "#"}
