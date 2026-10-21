@@ -78,22 +78,22 @@ export const expressiveCodeConfig: ExpressiveCodeConfig = {
 /**
  * 评论区（Giscus，数据存在 GitHub Discussions 里）
  *
- * 启用前需要在 GitHub 上做三件事：
+ * 依赖两个 GitHub 侧的前置条件（已完成）：
  * 1. 仓库 Settings → General → Features 勾选 Discussions
- * 2. 给仓库安装 Giscus App：https://github.com/apps/giscus
- * 3. 打开 https://giscus.app ，填入仓库 Elisialaws/Elisialaws.github.io，
- *    分类选一个（例如新建 Comments），把页面生成的
- *    data-category-id 复制到下面的 categoryId 里
+ * 2. 仓库安装了 Giscus App：https://github.com/apps/giscus
  *
- * repoId 已经填好；categoryId 留空时文章页会显示一行配置提示，不会报错。
+ * categoryId 取自 https://giscus.app 生成的配置片段。
+ * 目前用的是 Discussions 的默认分类 General；
+ * 若想更干净，可以在 GitHub 新建一个 Announcements 类型的 Comments 分类，
+ * 再把下面两项换成新分类的 name / id（giscus.app 会给出新的 categoryId）。
  */
 export const commentConfig: CommentConfig = {
 	enable: true,
 	giscus: {
 		repo: "Elisialaws/Elisialaws.github.io",
 		repoId: "R_kgDOVObTYw",
-		category: "Comments",
-		categoryId: "",
+		category: "General",
+		categoryId: "DIC_kwDOVObTY84DJLSt",
 		// mapping 用 pathname：中英文文章路径不同，各自拥有独立讨论串
 		mapping: "pathname",
 		strict: false,

@@ -40,13 +40,13 @@ pnpm new-post my-post   # 新建文章 → src/content/posts/my-post.md
 
 评论由 Giscus 驱动，数据保存在仓库的 GitHub Discussions 里，站点本身不需要后端。配置在 `src/config.ts` 的 `commentConfig`，组件是 `src/components/Comments.astro`（挂在 `src/pages/posts/[...slug].astro` 与英文版同一位置）。
 
-首次启用需要三步（只需做一次）：
+首次启用需要三步（只需做一次，本站已完成）：
 
 1. 仓库 **Settings → General → Features** 勾选 **Discussions**
 2. 给仓库安装 Giscus App：<https://github.com/apps/giscus>
-3. 打开 <https://giscus.app>，仓库填 `Elisialaws/Elisialaws.github.io`，分类选 `Comments`（没有就新建一个），把生成的 `data-category-id` 填到 `commentConfig.giscus.categoryId`
+3. 打开 <https://giscus.app>，仓库填 `Elisialaws/Elisialaws.github.io`，选好分类后把 `data-category-id` 填到 `commentConfig.giscus.categoryId`
 
-`categoryId` 为空时，文章页评论区会显示一行配置提示，不会报错。映射方式用 `pathname`：中英文文章路径不同，各自有独立讨论串。
+当前取的是 Discussions 默认分类 `General`（`categoryId` = `DIC_kwDOVObTY84DJLSt`）。想更干净的话，可以在 GitHub 新建一个 **Announcements** 类型的 `Comments` 分类，再用 giscus.app 给出的新 id 替换这两项。`categoryId` 为空时，文章页评论区会显示一行配置提示，不会报错。映射方式用 `pathname`：中英文文章路径不同，各自有独立讨论串。
 
 ## 部署（Cloudflare Workers，免费套餐）
 
