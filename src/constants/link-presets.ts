@@ -23,5 +23,13 @@ export function getLinkPresets(
 			name: i18n(I18nKey.projects, lang),
 			url: localePath(lang, "/projects/"),
 		},
+		[LinkPreset.Papers]: {
+			name: i18n(I18nKey.papers, lang),
+			url: localePath(lang, "/papers/"),
+		},
+		[LinkPreset.Trending]: {
+			name: i18n(I18nKey.trending, lang),
+			url: localePath(lang, "/trending/"),
+		},
 	};
 }

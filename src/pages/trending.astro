@@ -1,0 +1,14 @@
+---
+import TrendingList from "@components/TrendingList.astro";
+import I18nKey from "@i18n/i18nKey";
+import { i18n } from "@i18n/translation";
+import MainGridLayout from "@layouts/MainGridLayout.astro";
+---
+
+<MainGridLayout
+	title={i18n(I18nKey.trending, "zh")}
+	description="GitHub 上正在快速上涨的仓库：今日、本周、本月三个榜单，构建时抓取快照。"
+	lang="zh"
+>
+	<TrendingList />
+</MainGridLayout>

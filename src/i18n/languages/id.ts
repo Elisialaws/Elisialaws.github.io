@@ -6,6 +6,8 @@ export const id: Translation = {
 	[Key.about]: "Tentang",
 	[Key.archive]: "Arsip",
 	[Key.projects]: "Proyek",
+	[Key.papers]: "Makalah",
+	[Key.trending]: "Tren",
 	[Key.search]: "Cari",
 
 	[Key.tags]: "Tag",

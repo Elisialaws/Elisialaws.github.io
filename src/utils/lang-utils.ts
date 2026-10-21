@@ -3,7 +3,13 @@ import { findPostBySlug } from "@utils/content-utils";
 import { url } from "@utils/url-utils";
 
 /** Route segments of static pages that exist in both languages */
-const STATIC_ROUTE_SEGMENTS = ["archive", "about", "projects"];
+const STATIC_ROUTE_SEGMENTS = [
+	"archive",
+	"about",
+	"projects",
+	"papers",
+	"trending",
+];
 
 /** Strip the locale prefix and normalize to a trailing-slash path */
 function normalizePath(pathname: string, locale: Locale): string {

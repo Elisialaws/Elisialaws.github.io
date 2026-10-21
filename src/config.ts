@@ -44,7 +44,13 @@ export const siteConfig: SiteConfig = {
 
 export const navBarConfig: NavBarConfig = {
 	// About lives in the footer; GitHub is an icon next to the language switch
-	links: [LinkPreset.Home, LinkPreset.Archive, LinkPreset.Projects],
+	links: [
+		LinkPreset.Home,
+		LinkPreset.Archive,
+		LinkPreset.Papers,
+		LinkPreset.Projects,
+		LinkPreset.Trending,
+	],
 };
 
 export const profileConfig: ProfileConfig = {

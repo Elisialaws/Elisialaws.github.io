@@ -6,6 +6,8 @@ export const vi: Translation = {
 	[Key.about]: "Giới thiệu",
 	[Key.archive]: "Kho bài",
 	[Key.projects]: "Dự án",
+	[Key.papers]: "Bài báo",
+	[Key.trending]: "Xu hướng",
 	[Key.search]: "Tìm kiếm",
 
 	[Key.tags]: "Thẻ",

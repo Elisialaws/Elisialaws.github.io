@@ -1,0 +1,268 @@
+---
+import { Icon } from "astro-icon/components";
+import trendingData from "../data/github-trending.json";
+import { getLocaleFromUrl } from "@i18n/translation";
+
+export type TrendingRepo = {
+	owner: string;
+	name: string;
+	fullName: string;
+	url: string;
+	description: string;
+	language: string;
+	stars: number;
+	forks: number;
+	gained: number;
+};
+
+interface Props {
+	class?: string;
+}
+
+const className = Astro.props.class;
+const locale = getLocaleFromUrl(Astro.url.pathname);
+
+const periods = [
+	{ key: "daily" as const, zh: "今日", en: "Today", unitZh: "今日新增", unitEn: "today" },
+	{ key: "weekly" as const, zh: "本周", en: "This week", unitZh: "本周新增", unitEn: "this week" },
+	{ key: "monthly" as const, zh: "本月", en: "This month", unitZh: "本月新增", unitEn: "this month" },
+];
+
+const rows: { key: "daily" | "weekly" | "monthly"; items: TrendingRepo[] }[] = periods.map(
+	(p) => ({ key: p.key, items: (trendingData[p.key] ?? []) as TrendingRepo[] }),
+);
+
+const fetchedAt = new Date(trendingData.fetchedAt);
+const fetchedText = new Intl.DateTimeFormat(locale === "en" ? "en-GB" : "zh-CN", {
+	dateStyle: "medium",
+	timeStyle: "short",
+	timeZone: "Asia/Shanghai",
+}).format(fetchedAt);
+
+const t = {
+	title: locale === "en" ? "GitHub Trending" : "GitHub 趋势",
+	intro:
+		locale === "en"
+			? "Repositories climbing the GitHub charts right now. The snapshot is taken when the site is built, so it updates on every deploy."
+			: "正在 GitHub 上冒头的仓库。榜单在站点构建时抓取，每次部署都会更新。",
+	snapshot: locale === "en" ? "Snapshot" : "数据快照",
+	empty: locale === "en" ? "No snapshot for this period yet." : "这一档还没有抓到数据。",
+	viewAll: locale === "en" ? "Open GitHub Trending" : "打开 GitHub Trending",
+	stars: locale === "en" ? "stars" : "星",
+	forks: locale === "en" ? "forks" : "分叉",
+};
+
+const langColors: Record<string, string> = {
+	TypeScript: "#3178c6",
+	JavaScript: "#f1e05a",
+	Python: "#3572A5",
+	Rust: "#dea584",
+	Go: "#00ADD8",
+	C: "#555555",
+	"C++": "#f34b7d",
+	"C#": "#178600",
+	Java: "#b07219",
+	Kotlin: "#A97BFF",
+	Swift: "#F05138",
+	Ruby: "#701516",
+	PHP: "#4F5D95",
+	Shell: "#89e051",
+	HTML: "#e34c26",
+	CSS: "#563d7c",
+	Vue: "#41b883",
+	Svelte: "#ff3e00",
+	Dart: "#00B4AB",
+	Zig: "#ec915c",
+	Lua: "#000080",
+	Elixir: "#6e4a7e",
+	Haskell: "#5e5086",
+	Jupyter: "#DA5B0B",
+	"Jupyter Notebook": "#DA5B0B",
+};
+
+const fmt = (n: number) => new Intl.NumberFormat("en-US").format(n);
+---
+
+<div class:list={[className, "flex flex-col gap-4 mb-4"]}>
+	<div class="card-base rounded-[var(--radius-large)] px-6 py-5 md:px-9 md:py-7 onload-animation">
+		<div class="flex flex-wrap items-start justify-between gap-4">
+			<div class="min-w-0">
+				<div class="flex items-center gap-3 mb-2">
+					<div class="h-10 w-10 shrink-0 rounded-lg bg-[var(--btn-regular-bg)] flex items-center justify-center">
+						<Icon
+							name="fa6-brands:github"
+							class="text-[1.4rem] text-[var(--primary)]"
+						/>
+					</div>
+					<h1 class="text-2xl md:text-3xl font-bold text-90">{t.title}</h1>
+				</div>
+				<p class="text-75 text-sm md:text-[0.95rem] leading-relaxed max-w-2xl">
+					{t.intro}
+				</p>
+			</div>
+			<a
+				href={trendingData.source}
+				target="_blank"
+				rel="noopener"
+				class="btn-regular rounded-lg h-9 px-3 text-xs font-semibold active:scale-95 shrink-0"
+			>
+				<Icon
+					name="fa6-solid:arrow-up-right-from-square"
+					class="text-[0.75rem] mr-1.5"
+				/>
+				{t.viewAll}
+			</a>
+		</div>
+
+		<div class="flex items-center gap-2 mt-5">
+			<div
+				role="tablist"
+				aria-label={t.title}
+				class="flex items-center gap-1 p-1 rounded-lg bg-black/[0.04] dark:bg-white/[0.08]"
+			>
+				{periods.map((period, index) => (
+					<button
+						type="button"
+						role="tab"
+						data-trending-tab={period.key}
+						aria-selected={index === 0 ? "true" : "false"}
+						class:list={[
+							"px-3 h-8 rounded-md text-sm font-bold transition active:scale-95",
+							index === 0
+								? "bg-[var(--primary)] text-white shadow-sm"
+								: "text-50 hover:text-[var(--primary)]",
+						]}
+					>
+						{locale === "en" ? period.en : period.zh}
+					</button>
+				))}
+			</div>
+			<div class="text-xs text-50 ml-auto">
+				{t.snapshot} · {fetchedText}
+			</div>
+		</div>
+	</div>
+
+	{rows.map((row, rowIndex) => (
+		<div
+			data-trending-panel={row.key}
+			style={rowIndex === 0 ? undefined : "display: none"}
+			class="flex flex-col gap-2"
+		>
+			{row.items.length === 0 && (
+				<div class="card-base rounded-[var(--radius-large)] p-8 text-center text-75 text-sm">
+					{t.empty}
+				</div>
+			)}
+			{row.items.map((repo, index) => {
+				const unit =
+					locale === "en"
+						? periods.find((p) => p.key === row.key)?.unitEn
+						: periods.find((p) => p.key === row.key)?.unitZh;
+				return (
+					<a
+						href={repo.url}
+						target="_blank"
+						rel="noopener"
+						class="card-base rounded-[var(--radius-large)] px-4 py-3.5 md:px-5 flex gap-3.5 group transition"
+					>
+						<div class="w-7 shrink-0 pt-0.5 text-center">
+							<span class:list={[
+								"text-sm font-bold tabular-nums",
+								index < 3 ? "text-[var(--primary)]" : "text-50",
+							]}>
+								{index + 1}
+							</span>
+						</div>
+						<img
+							src={`https://github.com/${repo.owner}.png?size=64`}
+							alt=""
+							loading="lazy"
+							width="32"
+							height="32"
+							class="w-8 h-8 rounded-lg shrink-0 bg-black/[0.04] dark:bg-white/[0.08]"
+						/>
+						<div class="min-w-0 flex-1">
+							<div class="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+								<span class="font-bold text-[0.95rem] text-90 truncate transition group-hover:text-[var(--primary)]">
+									{repo.fullName}
+								</span>
+								{repo.gained > 0 && (
+									<span class="text-xs font-semibold text-[var(--primary)] tabular-nums">
+										+{fmt(repo.gained)}
+										<span class="text-50 font-normal ml-1">{unit}</span>
+									</span>
+								)}
+							</div>
+							{repo.description && (
+								<div class="text-75 text-sm mt-1 line-clamp-2 leading-relaxed">
+									{repo.description}
+								</div>
+							)}
+							<div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-xs text-50">
+								{repo.language && (
+									<span class="flex items-center gap-1.5">
+										<span
+											class="w-2.5 h-2.5 rounded-full"
+											style={`background-color: ${langColors[repo.language] ?? "#8b949e"}`}
+										/>
+										{repo.language}
+									</span>
+								)}
+								<span class="flex items-center gap-1 tabular-nums">
+									<Icon name="fa6-solid:star" class="text-[0.7rem]" />
+									{fmt(repo.stars)}
+									<span class="sr-only">{t.stars}</span>
+								</span>
+								<span class="flex items-center gap-1 tabular-nums">
+									<Icon
+										name="fa6-solid:code-fork"
+										class="text-[0.7rem]"
+									/>
+									{fmt(repo.forks)}
+									<span class="sr-only">{t.forks}</span>
+								</span>
+							</div>
+						</div>
+					</a>
+				);
+			})}
+		</div>
+	))}
+</div>
+
+<script>
+	// 文档级事件委托：swup 换页后无需重新绑定
+	function activate(key: string) {
+		const buttons = document.querySelectorAll<HTMLButtonElement>(
+			"[data-trending-tab]",
+		);
+		const panels = document.querySelectorAll<HTMLElement>(
+			"[data-trending-panel]",
+		);
+		if (!buttons.length) return;
+
+		buttons.forEach((button) => {
+			const active = button.dataset.trendingTab === key;
+			button.setAttribute("aria-selected", active ? "true" : "false");
+			button.classList.toggle("bg-[var(--primary)]", active);
+			button.classList.toggle("text-white", active);
+			button.classList.toggle("shadow-sm", active);
+			button.classList.toggle("text-50", !active);
+			button.classList.toggle("hover:text-[var(--primary)]", !active);
+		});
+		panels.forEach((panel) => {
+			// 用内联 display 而不是 hidden 属性：面板自带 flex 类，
+			// 类选择器会盖掉 UA 的 [hidden]{display:none}
+			panel.style.display = panel.dataset.trendingPanel === key ? "" : "none";
+		});
+	}
+
+	document.addEventListener("click", (event) => {
+		const target = event.target as HTMLElement | null;
+		const button = target?.closest<HTMLButtonElement>("[data-trending-tab]");
+		if (!button?.dataset.trendingTab) return;
+		event.preventDefault();
+		activate(button.dataset.trendingTab);
+	});
+</script>
