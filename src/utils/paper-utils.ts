@@ -1,7 +1,46 @@
 import { getCollection, type CollectionEntry } from "astro:content";
 import { getLocaleFromUrl, type Locale } from "@i18n/translation";
+import { url } from "@utils/url-utils";
 
 export type Paper = CollectionEntry<"papers">;
+
+/** 论文外链的展示顺序与图标（列表页与详情页共用） */
+export const PAPER_LINK_ORDER = [
+	"pdf",
+	"doi",
+	"arxiv",
+	"code",
+	"slides",
+	"poster",
+	"project",
+] as const;
+
+export const PAPER_LINK_ICONS: Record<string, string> = {
+	pdf: "material-symbols:picture-as-pdf-outline-rounded",
+	doi: "material-symbols:link-rounded",
+	arxiv: "material-symbols:article-outline-rounded",
+	code: "material-symbols:code-rounded",
+	slides: "material-symbols:slideshow-outline-rounded",
+	poster: "material-symbols:image-outline-rounded",
+	project: "material-symbols:folder-open-outline-rounded",
+};
+
+/** 论文的 URL 段：frontmatter 没有 slug 字段，直接用文件名 */
+export function getPaperSlug(paper: Paper): string {
+	return paper.id.replace(/\.(md|mdx)$/i, "");
+}
+
+/** 单篇论文详情页地址（中英共用同一份数据，前缀随语种） */
+export function getPaperUrl(paper: Paper, lang: Locale = "zh"): string {
+	const base = lang === "en" ? "/en/papers/" : "/papers/";
+	return url(`${base}${getPaperSlug(paper)}/`);
+}
+
+/** 该 slug 的论文是否存在（论文不分语种，中英页面同源） */
+export async function paperSlugExists(slug: string): Promise<boolean> {
+	const papers = await getSortedPapers();
+	return papers.some((paper) => getPaperSlug(paper) === slug);
+}
 
 /** 论文列表：生产环境过滤 draft，按 年份倒序 → featured → 标题 排序 */
 export async function getSortedPapers(): Promise<Paper[]> {
@@ -85,6 +124,13 @@ export type PaperLabels = {
 	types: Record<string, string>;
 	statuses: Record<string, string>;
 	featured: string;
+	/* 单篇详情页 */
+	backToPapers: string;
+	authorsLabel: string;
+	venueLabel: string;
+	citation: string;
+	notes: string;
+	copyCitation: string;
 };
 
 const zhLabels: PaperLabels = {
@@ -120,6 +166,12 @@ const zhLabels: PaperLabels = {
 		"in-prep": "撰写中",
 	},
 	featured: "代表作",
+	backToPapers: "全部论文",
+	authorsLabel: "作者",
+	venueLabel: "发表于",
+	citation: "引用信息",
+	notes: "笔记",
+	copyCitation: "复制引用",
 };
 
 const enLabels: PaperLabels = {
@@ -157,10 +209,20 @@ const enLabels: PaperLabels = {
 		"in-prep": "In preparation",
 	},
 	featured: "Selected",
+	backToPapers: "All papers",
+	authorsLabel: "Authors",
+	venueLabel: "Published in",
+	citation: "Citation",
+	notes: "Notes",
+	copyCitation: "Copy citation",
 };
 
-/** 页面文案：按 URL 判断语种，中英各一套 */
-export function getPaperLabels(pathname: string): PaperLabels {
-	const locale: Locale = getLocaleFromUrl(pathname);
+/** 页面文案：按语种取，中英各一套 */
+export function getPaperLabelsByLocale(locale: Locale): PaperLabels {
 	return locale === "en" ? enLabels : zhLabels;
+}
+
+/** 页面文案：按 URL 判断语种 */
+export function getPaperLabels(pathname: string): PaperLabels {
+	return getPaperLabelsByLocale(getLocaleFromUrl(pathname));
 }

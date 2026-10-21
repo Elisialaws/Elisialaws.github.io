@@ -1,8 +1,13 @@
 ---
+import BibtexCopyScript from "@components/BibtexCopyScript.astro";
 import { Icon } from "astro-icon/components";
+import type { Locale } from "@i18n/translation";
 import {
 	getBibtex,
+	getPaperUrl,
 	groupByYear,
+	PAPER_LINK_ICONS,
+	PAPER_LINK_ORDER,
 	type Paper,
 	type PaperLabels,
 } from "@utils/paper-utils";
@@ -11,22 +16,14 @@ interface Props {
 	papers: Paper[];
 	labels: PaperLabels;
 	class?: string;
+	lang?: Locale;
 }
 
 const { papers, labels } = Astro.props;
+const lang: Locale = Astro.props.lang ?? "zh";
 const className = Astro.props.class;
 const groups = groupByYear(papers);
 
-const linkOrder = ["pdf", "doi", "arxiv", "code", "slides", "poster", "project"] as const;
-const linkIcons: Record<string, string> = {
-	pdf: "material-symbols:picture-as-pdf-outline-rounded",
-	doi: "material-symbols:link-rounded",
-	arxiv: "material-symbols:article-outline-rounded",
-	code: "material-symbols:code-rounded",
-	slides: "material-symbols:slideshow-outline-rounded",
-	poster: "material-symbols:image-outline-rounded",
-	project: "material-symbols:folder-open-outline-rounded",
-};
 ---
 
 {
@@ -63,9 +60,6 @@ const linkIcons: Record<string, string> = {
 						const { data } = paper;
 						const bibtex = getBibtex(paper);
 						const bibId = `bib-${paper.id.replace(/[^a-zA-Z0-9-]/g, "-")}`;
-						const primary =
-							data.links.doi ?? data.links.pdf ?? data.links.arxiv ??
-							data.links.project;
 
 						return (
 							<article
@@ -93,18 +87,12 @@ const linkIcons: Record<string, string> = {
 								</div>
 
 								<h2 class="font-bold text-lg md:text-xl text-90 leading-snug mb-2">
-									{primary ? (
-										<a
-											href={primary}
-											target="_blank"
-											rel="noopener"
-											class="transition hover:text-[var(--primary)] underline decoration-transparent hover:decoration-[var(--primary)] underline-offset-4"
-										>
-											{data.title}
-										</a>
-									) : (
-										data.title
-									)}
+									<a
+										href={getPaperUrl(paper, lang)}
+										class="transition hover:text-[var(--primary)] underline decoration-transparent hover:decoration-[var(--primary)] underline-offset-4"
+									>
+										{data.title}
+									</a>
 								</h2>
 
 								{data.authors.length > 0 && (
@@ -135,7 +123,7 @@ const linkIcons: Record<string, string> = {
 								)}
 
 								<div class="flex flex-wrap items-center gap-2">
-									{linkOrder.map((key) => {
+									{PAPER_LINK_ORDER.map((key) => {
 										const href = data.links[key];
 										if (!href) return null;
 										return (
@@ -145,7 +133,7 @@ const linkIcons: Record<string, string> = {
 												rel="noopener"
 												class="btn-regular rounded-lg h-8 px-2.5 text-xs font-semibold active:scale-95"
 											>
-												<Icon name={linkIcons[key]} class="text-[1rem] mr-1" />
+												<Icon name={PAPER_LINK_ICONS[key]} class="text-[1rem] mr-1" />
 												{labels.links[key]}
 											</a>
 										);
@@ -184,39 +172,4 @@ const linkIcons: Record<string, string> = {
 	)
 }
 
-<script>
-	// 文档级委托：swup 换页后按钮仍能生效，无需重新初始化
-	document.addEventListener("click", async (event) => {
-		const target = event.target as HTMLElement | null;
-		const button = target?.closest<HTMLButtonElement>("[data-copy-bibtex]");
-		if (!button) return;
-
-		const id = button.dataset.copyBibtex;
-		const source = id ? document.getElementById(id) : null;
-		if (!source) return;
-
-		const text = source.textContent ?? "";
-		const original = button.innerHTML;
-		const done = (label: string) => {
-			button.textContent = label;
-			button.disabled = true;
-			window.setTimeout(() => {
-				button.innerHTML = original;
-				button.disabled = false;
-			}, 1400);
-		};
-
-		try {
-			await navigator.clipboard.writeText(text);
-			done(button.dataset.copiedLabel ?? "✓");
-		} catch {
-			// 非 HTTPS 或权限被拒时回退到选中文本
-			const range = document.createRange();
-			range.selectNodeContents(source);
-			const selection = window.getSelection();
-			selection?.removeAllRanges();
-			selection?.addRange(range);
-			done(button.dataset.failedLabel ?? "!");
-		}
-	});
-</script>
+<BibtexCopyScript />

@@ -41,9 +41,18 @@ const siteLang = localeToHtmlLang(currentLocale);
 
 const siteBase = Astro.site ?? new URL(Astro.url.origin);
 const alternateUrls = await getAlternateUrls(Astro.url.pathname);
+// paired 为 false 表示目标语种没有这一页（例如中文标签「前端」在英文站
+// 并不存在）。此时不声明那条 hreflang，否则等于告诉搜索引擎「这一页的
+// 英文版是 xx」，而那个地址其实是别的内容。
 const alternateAbs = {
-	zh: new URL(alternateUrls.zh, siteBase).href,
-	en: new URL(alternateUrls.en, siteBase).href,
+	zh: {
+		href: new URL(alternateUrls.zh.url, siteBase).href,
+		paired: alternateUrls.zh.paired,
+	},
+	en: {
+		href: new URL(alternateUrls.en.url, siteBase).href,
+		paired: alternateUrls.en.paired,
+	},
 };
 const rssUrl = new URL(
 	`${currentLocale === "en" ? "en/" : ""}rss.xml`,
@@ -159,9 +168,15 @@ const bannerOffset =
 
 		<!-- canonical + hreflang alternates for the bilingual site -->
 		<link rel="canonical" href={Astro.url} />
-		<link rel="alternate" hreflang="zh-CN" href={alternateAbs.zh} />
-		<link rel="alternate" hreflang="en" href={alternateAbs.en} />
-		<link rel="alternate" hreflang="x-default" href={alternateAbs.zh} />
+		{alternateAbs.zh.paired && (
+			<link rel="alternate" hreflang="zh-CN" href={alternateAbs.zh.href} />
+		)}
+		{alternateAbs.en.paired && (
+			<link rel="alternate" hreflang="en" href={alternateAbs.en.href} />
+		)}
+		{alternateAbs.zh.paired && (
+			<link rel="alternate" hreflang="x-default" href={alternateAbs.zh.href} />
+		)}
 
 		<meta name="viewport" content="width=device-width" />
 		<meta name="generator" content={Astro.generator} />

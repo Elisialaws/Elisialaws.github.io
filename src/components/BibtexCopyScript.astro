@@ -1,0 +1,42 @@
+---
+/**
+ * BibTeX 复制按钮的行为脚本（论文列表页与单篇详情页共用）。
+ * 用文档级事件委托，swup 站内换页后无需重新初始化。
+ */
+---
+
+<script>
+	document.addEventListener("click", async (event) => {
+		const target = event.target as HTMLElement | null;
+		const button = target?.closest<HTMLButtonElement>("[data-copy-bibtex]");
+		if (!button) return;
+
+		const id = button.dataset.copyBibtex;
+		const source = id ? document.getElementById(id) : null;
+		if (!source) return;
+
+		const text = source.textContent ?? "";
+		const original = button.innerHTML;
+		const done = (label: string) => {
+			button.textContent = label;
+			button.disabled = true;
+			window.setTimeout(() => {
+				button.innerHTML = original;
+				button.disabled = false;
+			}, 1400);
+		};
+
+		try {
+			await navigator.clipboard.writeText(text);
+			done(button.dataset.copiedLabel ?? "✓");
+		} catch {
+			// 非 HTTPS 或权限被拒时回退到选中文本
+			const range = document.createRange();
+			range.selectNodeContents(source);
+			const selection = window.getSelection();
+			selection?.removeAllRanges();
+			selection?.addRange(range);
+			done(button.dataset.failedLabel ?? "!");
+		}
+	});
+</script>

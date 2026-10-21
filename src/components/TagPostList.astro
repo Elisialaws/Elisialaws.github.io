@@ -1,0 +1,76 @@
+---
+import type { CollectionEntry } from "astro:content";
+import { Icon } from "astro-icon/components";
+import type { Locale } from "@i18n/translation";
+import { getPostUrlBySlug } from "@utils/url-utils";
+
+interface Props {
+	posts: CollectionEntry<"posts">[];
+	lang?: Locale;
+	/** 当前标签的展示名，用于高亮同名标签 */
+	tagName: string;
+}
+
+const lang = Astro.props.lang ?? "zh";
+const { posts, tagName } = Astro.props;
+
+const dateFmt = new Intl.DateTimeFormat(lang === "en" ? "en-US" : "zh-CN", {
+	year: "numeric",
+	month: lang === "en" ? "short" : "2-digit",
+	day: "2-digit",
+});
+---
+
+<div class="flex flex-col gap-3 mb-4">
+	{
+		posts.map((post, index) => {
+			const slug = post.id
+				.replace(/\.(md|mdx)$/i, "")
+				.replace(/\.en$/i, "");
+			return (
+				<a
+					href={getPostUrlBySlug(slug, lang)}
+					class="card-base rounded-[var(--radius-large)] px-5 py-4 md:px-6 md:py-5 group transition
+						hover:shadow-md onload-animation"
+					style={`animation-delay: calc(var(--content-delay) + ${index * 50}ms)`}
+				>
+					<div class="flex flex-col gap-2">
+						<div class="flex items-center gap-2 text-xs text-50">
+							<Icon
+								name="material-symbols:calendar-month-outline-rounded"
+								class="text-[1rem]"
+							/>
+							<time datetime={post.data.published.toISOString()}>
+								{dateFmt.format(post.data.published)}
+							</time>
+						</div>
+						<h2 class="text-base md:text-lg font-bold text-90 leading-snug transition group-hover:text-[var(--primary)]">
+							{post.data.title}
+						</h2>
+						{post.data.description && (
+							<p class="text-75 text-sm leading-relaxed line-clamp-2">
+								{post.data.description}
+							</p>
+						)}
+						{(post.data.tags ?? []).length > 0 && (
+							<div class="flex flex-wrap gap-1.5 mt-0.5">
+								{post.data.tags.map((tag) => (
+									<span
+										class:list={[
+											"px-2 py-0.5 rounded text-xs",
+											tag.trim() === tagName
+												? "bg-[var(--btn-regular-bg)] text-[var(--primary)] font-semibold"
+												: "text-50 bg-black/[0.03] dark:bg-white/[0.06]",
+										]}
+									>
+										#{tag}
+									</span>
+								))}
+							</div>
+						)}
+					</div>
+				</a>
+			);
+		})
+	}
+</div>

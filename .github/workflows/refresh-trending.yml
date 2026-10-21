@@ -1,0 +1,80 @@
+# 每天自动刷新 GitHub 趋势页
+#
+# 趋势数据是在构建时抓取的（src/data/github-trending.json），所以页面想保持
+# 「当下在涨」就必须定期重建。这个工作流每天跑一次：抓取 → 构建 → 发布。
+#
+# 说明：
+# - 只发布，不回写仓库。下次任何一次构建的 prebuild 都会重新抓取，所以
+#   仓库里的快照旧一点不影响线上；这样可以避免每天一条自动提交。
+# - 与 pages.yml 共用 concurrency group "pages"，两边不会并发部署。
+# - 想同时更新 Cloudflare Workers 那份，在仓库 Secrets 里加
+#   CLOUDFLARE_API_TOKEN 和 CLOUDFLARE_ACCOUNT_ID 即可，最后一步会自动执行。
+name: Refresh GitHub Trending
+
+on:
+  schedule:
+    # 01:17 UTC = 北京时间 09:17，避开整点高峰
+    - cron: "17 1 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Fetch trending + build
+        run: pnpm build
+
+      - name: Show trending snapshot time
+        run: node -e "const d=require('./src/data/github-trending.json');console.log('snapshot:',d.fetchedAt,'weekly:',d.weekly.length)"
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Detect Cloudflare credentials
+        id: cf
+        run: echo "enabled=${{ secrets.CLOUDFLARE_API_TOKEN != '' }}" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy to Cloudflare Workers
+        if: steps.cf.outputs.enabled == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx --yes wrangler@4 deploy

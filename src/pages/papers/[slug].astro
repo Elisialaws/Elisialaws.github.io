@@ -1,0 +1,113 @@
+---
+import type { GetStaticPaths } from "astro";
+import BibtexCopyScript from "@components/BibtexCopyScript.astro";
+import PaperDetail from "@components/PaperDetail.astro";
+import MainGridLayout from "@layouts/MainGridLayout.astro";
+import {
+	getPaperSlug,
+	getSortedPapers,
+	type Paper,
+} from "@utils/paper-utils";
+
+export const getStaticPaths = (async () => {
+	const papers = await getSortedPapers();
+	// 论文 slug 是文件名；带子目录的条目无法用单段路由，跳过
+	return papers
+		.filter((paper) => !getPaperSlug(paper).includes("/"))
+		.map((paper) => ({
+			params: { slug: getPaperSlug(paper) },
+			props: { paper },
+		}));
+}) satisfies GetStaticPaths;
+
+const { paper } = Astro.props as { paper: Paper };
+const { data } = paper;
+const siteBase = Astro.site ?? new URL(Astro.url.origin);
+const canonicalUrl = new URL(Astro.url.pathname, siteBase).href;
+const absolute = (href?: string) =>
+	href ? new URL(href, siteBase).href : undefined;
+
+const pdfUrl = absolute(data.links.pdf);
+const doiValue = data.links.doi
+	?.replace(/^https?:\/\/(dx\.)?doi\.org\//i, "")
+	.trim();
+
+/** 同一份成果的其他在线位置，供 schema.org 关联 */
+const sameAs = [
+	absolute(data.links.doi),
+	data.links.arxiv ? `https://arxiv.org/abs/${data.links.arxiv}` : undefined,
+	absolute(data.links.code),
+].filter((href): href is string => Boolean(href));
+
+/**
+ * Google Scholar 认的是 citation_* 系列 meta，不是人眼看得到的东西。
+ * 每篇论文有独立页面 + 这一组标签，才有可能被学术检索收录。
+ */
+const jsonLd = {
+	"@context": "https://schema.org",
+	"@type": "ScholarlyArticle",
+	headline: data.title,
+	name: data.title,
+	author: data.authors.map((name) => ({ "@type": "Person", name })),
+	datePublished: String(data.year),
+	abstract: data.abstract || undefined,
+	keywords: data.tags.length > 0 ? data.tags.join(", ") : undefined,
+	inLanguage: "zh-CN",
+	url: canonicalUrl,
+	mainEntityOfPage: canonicalUrl,
+	...(data.venue
+		? {
+				isPartOf: {
+					"@type": data.type === "journal" ? "Periodical" : "Event",
+					name: data.venue,
+				},
+			}
+		: {}),
+	...(doiValue
+		? {
+				identifier: {
+					"@type": "PropertyValue",
+					propertyID: "DOI",
+					value: doiValue,
+				},
+			}
+		: {}),
+	...(sameAs.length > 0 ? { sameAs } : {}),
+};
+
+const jsonLdText = JSON.stringify(jsonLd).replace(/</g, "\\u003c");
+const description = data.abstract
+	? data.abstract.slice(0, 160)
+	: `${data.authors.join("、") || "汐浅"} · ${data.venue || ""} ${data.year}`.trim();
+---
+
+<MainGridLayout title={data.title} description={description} lang="zh">
+	<Fragment slot="head">
+		<meta name="citation_title" content={data.title} />
+		{data.authors.map((author) => <meta name="citation_author" content={author} />)}
+		<meta name="citation_publication_date" content={String(data.year)} />
+		{data.type === "journal" && data.venue && (
+			<meta name="citation_journal_title" content={data.venue} />
+		)}
+		{(data.type === "conference" || data.type === "workshop") && data.venue && (
+			<meta name="citation_conference_title" content={data.venue} />
+		)}
+		{doiValue && <meta name="citation_doi" content={doiValue} />}
+		{pdfUrl && <meta name="citation_pdf_url" content={pdfUrl} />}
+		{data.links.arxiv && (
+			<meta name="citation_arxiv_id" content={data.links.arxiv} />
+		)}
+		{data.abstract && <meta name="citation_abstract" content={data.abstract} />}
+		<meta name="citation_language" content="zh-CN" />
+		{data.tags.length > 0 && (
+			<meta name="citation_keywords" content={data.tags.join(", ")} />
+		)}
+		<meta name="dc.title" content={data.title} />
+		{data.authors.map((author) => <meta name="dc.creator" content={author} />)}
+		<meta name="dc.date" content={String(data.year)} />
+		<script is:inline type="application/ld+json" set:html={jsonLdText} />
+	</Fragment>
+
+	<PaperDetail paper={paper} lang="zh" />
+	<BibtexCopyScript />
+</MainGridLayout>

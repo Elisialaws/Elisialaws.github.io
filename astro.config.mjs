@@ -7,6 +7,7 @@ import swup from "@swup/astro";
 import expressiveCode from "astro-expressive-code";
 import icon from "astro-icon";
 import { defineConfig } from "astro/config";
+import { existsSync } from "node:fs";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import rehypeComponents from "rehype-components"; /* Render the custom directive content */
 import rehypeKatex from "rehype-katex";
@@ -110,12 +111,32 @@ export default defineConfig({
 		}),
         svelte(),
 		sitemap({
-			i18n: {
-				defaultLocale: "zh",
-				locales: {
-					zh: "zh-CN",
-					en: "en",
-				},
+			// 双语 hreflang 由下面这段自己算：中英页面路径互为镜像
+			// （"/posts/a/" ↔ "/en/posts/a/"），但并非每页都有对应版本
+			// （例如中文标签「前端」与英文标签 frontend 就不是同一个页面）。
+			// 只有两边都真实存在时才互相声明，避免 hreflang 指向 404。
+			serialize(item) {
+				const url = new URL(item.url);
+				const path = url.pathname;
+				const isEn = /^\/en(\/|$)/.test(path);
+				const zhPath = isEn
+					? path.replace(/^\/en(?=\/|$)/, "") || "/"
+					: path;
+				const enPath = isEn ? path : path === "/" ? "/en/" : `/en${path}`;
+				const built = (target) => {
+					try {
+						return existsSync(`./dist${decodeURIComponent(target)}index.html`);
+					} catch {
+						return false;
+					}
+				};
+				if (built(zhPath) && built(enPath)) {
+					item.links = [
+						{ lang: "zh-CN", url: new URL(zhPath, url.origin).href },
+						{ lang: "en", url: new URL(enPath, url.origin).href },
+					];
+				}
+				return item;
 			},
 		}),
 	],

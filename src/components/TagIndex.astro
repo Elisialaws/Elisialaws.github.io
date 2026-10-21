@@ -1,0 +1,73 @@
+---
+import { Icon } from "astro-icon/components";
+import type { Locale } from "@i18n/translation";
+import { getTagLandingUrlBySlug, getTagLandings } from "@utils/tag-utils";
+
+interface Props {
+	lang?: Locale;
+}
+
+const lang = Astro.props.lang ?? "zh";
+const landings = await getTagLandings(lang);
+
+const t =
+	lang === "en"
+		? {
+				title: "All tags",
+				intro: "Every tag on this site, with the posts behind it.",
+				empty: "No tags yet — they appear as soon as posts are published.",
+				posts: (n: number) => `${n} post${n === 1 ? "" : "s"}`,
+				aria: (name: string) => `View all posts tagged ${name}`,
+			}
+		: {
+				title: "全部标签",
+				intro: "按主题浏览站内所有文章。",
+				empty: "还没有标签，发布带 tags 的文章后会自动出现在这里。",
+				posts: (n: number) => `${n} 篇`,
+				aria: (name: string) => `查看所有标记为 ${name} 的文章`,
+			};
+---
+
+<div class="card-base rounded-[var(--radius-large)] px-6 py-5 md:px-9 md:py-7 mb-4 onload-animation">
+	<div class="flex items-center gap-3 mb-2">
+		<div
+			class="h-10 w-10 shrink-0 rounded-lg bg-[var(--btn-regular-bg)] flex items-center justify-center"
+		>
+			<Icon
+				name="material-symbols:label-outline-rounded"
+				class="text-[1.5rem] text-[var(--primary)]"
+			/>
+		</div>
+		<h1 class="text-2xl md:text-3xl font-bold text-90">{t.title}</h1>
+	</div>
+	<p class="text-75 text-sm md:text-[0.95rem] leading-relaxed">{t.intro}</p>
+</div>
+
+{
+	landings.length === 0 ? (
+		<div class="card-base rounded-[var(--radius-large)] p-10 md:p-14 text-center onload-animation">
+			<div class="text-75 text-sm md:text-[0.95rem] leading-relaxed">
+				{t.empty}
+			</div>
+		</div>
+	) : (
+		<div class="card-base rounded-[var(--radius-large)] p-5 md:p-7 onload-animation">
+			<div class="flex flex-wrap gap-2.5">
+				{landings.map((tag) => (
+					<a
+						href={getTagLandingUrlBySlug(tag.slug, lang)}
+						aria-label={t.aria(tag.name)}
+						class="group flex items-center gap-2 rounded-lg px-3 py-1.5 transition
+							bg-[var(--btn-regular-bg)] hover:bg-[var(--btn-regular-bg-hover)]
+							active:scale-95"
+					>
+						<span class="text-sm font-semibold text-90 transition group-hover:text-[var(--primary)]">
+							#{tag.name}
+						</span>
+						<span class="text-xs text-50 tabular-nums">{t.posts(tag.count)}</span>
+					</a>
+				))}
+			</div>
+		</div>
+	)
+}

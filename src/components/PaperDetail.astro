@@ -1,0 +1,189 @@
+---
+import { Icon } from "astro-icon/components";
+import type { Locale } from "@i18n/translation";
+import Markdown from "@components/misc/Markdown.astro";
+import {
+	getBibtex,
+	getPaperLabelsByLocale,
+	getPaperSlug,
+	PAPER_LINK_ICONS,
+	PAPER_LINK_ORDER,
+	type Paper,
+} from "@utils/paper-utils";
+
+interface Props {
+	paper: Paper;
+	lang?: Locale;
+}
+
+const lang: Locale = Astro.props.lang ?? "zh";
+const paper = Astro.props.paper;
+const { data } = paper;
+const labels = getPaperLabelsByLocale(lang);
+
+const { Content } = await paper.render();
+const hasBody = Boolean(paper.body?.trim());
+
+const bibtex = getBibtex(paper);
+const bibId = `bib-${getPaperSlug(paper).replace(/[^a-zA-Z0-9-]/g, "-")}`;
+
+const isPublished = data.status === "published" || data.status === "accepted";
+const papersUrl = lang === "en" ? "/en/papers/" : "/papers/";
+---
+
+<div class="card-base rounded-[var(--radius-large)] px-6 py-5 md:px-9 md:py-7 mb-4 onload-animation">
+	<a
+		href={papersUrl}
+		class="inline-flex items-center gap-1 text-xs text-50 hover:text-[var(--primary)] transition mb-4"
+	>
+		<Icon name="material-symbols:chevron-left-rounded" class="text-[1rem]" />
+		{labels.backToPapers}
+	</a>
+
+	<div class="flex flex-wrap items-center gap-2 mb-3">
+		<span
+			class="px-2.5 py-1 rounded-md text-xs font-semibold bg-[var(--btn-regular-bg)] text-[var(--btn-content)]"
+		>
+			{labels.types[data.type]}
+		</span>
+		<span
+			class:list={[
+				"px-2.5 py-1 rounded-md text-xs font-semibold",
+				isPublished
+					? "bg-[oklch(0.94_0.04_var(--hue))] text-[oklch(0.45_0.12_var(--hue))] dark:bg-[oklch(0.3_0.06_var(--hue))] dark:text-[oklch(0.85_0.1_var(--hue))]"
+					: "bg-black/[0.04] text-50 dark:bg-white/[0.08]",
+			]}
+		>
+			{labels.statuses[data.status]}
+		</span>
+		{
+			data.featured && (
+				<span class="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-[var(--btn-regular-bg)] text-[var(--primary)]">
+					<Icon name="fa6-solid:star" class="text-[0.7rem]" />
+					{labels.featured}
+				</span>
+			)
+		}
+	</div>
+
+	<h1 class="text-2xl md:text-[2rem] font-bold text-90 leading-snug mb-4">
+		{data.title}
+	</h1>
+
+	{
+		data.authors.length > 0 && (
+			<div class="flex flex-wrap items-baseline gap-x-2 gap-y-1 mb-3">
+				<span class="text-xs font-semibold text-50 uppercase tracking-wide">
+					{labels.authorsLabel}
+				</span>
+				<span class="text-90 text-sm md:text-[0.95rem] leading-relaxed">
+					{data.authors.join(lang === "en" ? ", " : "、")}
+				</span>
+			</div>
+		)
+	}
+
+	<div class="text-50 text-sm mb-5">
+		{
+			data.venue && (
+				<span>
+					{labels.venueLabel} <span class="italic text-75">{data.venue}</span>
+					{" · "}
+				</span>
+			)
+		}
+		<span class="tabular-nums">{data.year}</span>
+	</div>
+
+	<div class="flex flex-wrap items-center gap-2">
+		{
+			PAPER_LINK_ORDER.map((key) => {
+				const href = data.links[key];
+				if (!href) return null;
+				return (
+					<a
+						href={href}
+						target="_blank"
+						rel="noopener"
+						class="btn-regular rounded-lg h-8 px-2.5 text-xs font-semibold active:scale-95"
+					>
+						<Icon name={PAPER_LINK_ICONS[key]} class="text-[1rem] mr-1" />
+						{labels.links[key]}
+					</a>
+				);
+			})
+		}
+		<button
+			type="button"
+			data-copy-bibtex={bibId}
+			data-copied-label={labels.copied}
+			data-failed-label={labels.copyFailed}
+			class="btn-regular rounded-lg h-8 px-2.5 text-xs font-semibold active:scale-95"
+		>
+			<Icon
+				name="material-symbols:content-copy-outline-rounded"
+				class="text-[1rem] mr-1"
+			/>
+			{labels.bibtex}
+		</button>
+	</div>
+
+	{
+		data.tags.length > 0 && (
+			<div class="flex flex-wrap gap-2 mt-4">
+				{data.tags.map((tag) => (
+					<span class="px-2 py-0.5 rounded text-xs text-50 bg-black/[0.03] dark:bg-white/[0.06]">
+						{tag}
+					</span>
+				))}
+			</div>
+		)
+	}
+</div>
+
+{
+	data.abstract && (
+		<section class="card-base rounded-[var(--radius-large)] px-6 py-5 md:px-9 md:py-7 mb-4 onload-animation">
+			<h2 class="flex items-center gap-2 text-lg font-bold text-90 mb-3">
+				<Icon
+					name="material-symbols:article-outline-rounded"
+					class="text-[1.25rem] text-[var(--primary)]"
+				/>
+				{labels.abstract}
+			</h2>
+			<p class="text-75 text-sm md:text-[0.95rem] leading-relaxed text-justify">
+				{data.abstract}
+			</p>
+		</section>
+	)
+}
+
+{
+	hasBody && (
+		<section class="card-base rounded-[var(--radius-large)] px-6 py-5 md:px-9 md:py-7 mb-4 onload-animation">
+			<h2 class="flex items-center gap-2 text-lg font-bold text-90 mb-3">
+				<Icon
+					name="material-symbols:edit-note-rounded"
+					class="text-[1.25rem] text-[var(--primary)]"
+				/>
+				{labels.notes}
+			</h2>
+			<Markdown class="markdown-content">
+				<Content />
+			</Markdown>
+		</section>
+	)
+}
+
+<section class="card-base rounded-[var(--radius-large)] px-6 py-5 md:px-9 md:py-7 mb-4 onload-animation">
+	<h2 class="flex items-center gap-2 text-lg font-bold text-90 mb-3">
+		<Icon
+			name="material-symbols:format-quote-rounded"
+			class="text-[1.25rem] text-[var(--primary)]"
+		/>
+		{labels.citation}
+	</h2>
+	<pre
+		id={bibId}
+		class="overflow-x-auto rounded-lg p-4 text-xs leading-relaxed text-white/85 bg-[var(--codeblock-bg)] font-mono">{bibtex}</pre>
+</section>

@@ -1,0 +1,15 @@
+---
+import TagIndex from "@components/TagIndex.astro";
+import MainGridLayout from "@layouts/MainGridLayout.astro";
+import { getTagLandings } from "@utils/tag-utils";
+
+const landings = await getTagLandings("en");
+---
+
+<MainGridLayout
+	title={`All tags · ${landings.length} topics`}
+	description={`Browse Xiqian's blog by topic — ${landings.length} tags in total.`}
+	lang="en"
+>
+	<TagIndex lang="en" />
+</MainGridLayout>

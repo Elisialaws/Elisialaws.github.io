@@ -78,6 +78,17 @@ draft: false
 - BibTeX 由 frontmatter 自动生成（引用键 = 第一作者姓 + 年份 + 标题首个实词）；想手写就在 `bibtex:` 里填整段，会优先使用
 - 中文页与英文页共用同一份数据，只有界面文案区分语种
 
+每篇论文还有独立详情页 `/papers/<文件名>/`（英文 `/en/papers/<文件名>/`），列表页点标题进入。详情页除了摘要、笔记与 BibTeX，还会输出 Google Scholar 抓取所需的 `citation_title`、`citation_author`、`citation_publication_date`、`citation_conference_title` / `citation_journal_title`、`citation_doi`、`citation_pdf_url`、`citation_arxiv_id`、`citation_abstract`，以及 schema.org 的 `ScholarlyArticle` 结构化数据。论文能不能被学术检索收录，靠的是这一组标签，而不是页面排版本身。
+
+## 标签
+
+标签不需要维护。侧栏标签云、`/tags/` 总览、以及每个标签的独立页面 `/tags/<slug>/`（英文 `/en/tags/<slug>/`）全部在构建时按文章 frontmatter 的 `tags` 生成。
+
+- slug 规则：小写 → 空白与下划线转连字符 → 只保留字母、数字、中文以及 `+ . -`。所以 `AI Infra` → `ai-infra`，`C++` → `c++`，`Node.js` → `node.js`
+- 同一 slug 的不同写法会合并（`AI Infra` 与 `ai-infra` 是同一个页面），展示名取出现最多的那个
+- 归档页的 `?tag=` 过滤还在，但那只是站内筛选、不可索引；可分享、可被收录的是上面的落地页
+- 中英文章的标签各自独立：中文「前端」与英文 `frontend` 是两个不同页面，不会互相声明 hreflang——它们本来就不是同一页的两种语言版本
+
 ## GitHub 趋势
 
 榜单在**构建时**抓取，写入 `src/data/github-trending.json`，页面直接读快照——没有运行时请求、不受 GitHub API 限流影响。
@@ -91,6 +102,17 @@ $env:SKIP_TRENDING=1; pnpm build # 跳过抓取，沿用现有快照（离线时
 - `pnpm build` 前会自动跑一次（`prebuild`），所以每次部署都拿到最新榜单
 - 数据源是 `https://github.com/trending` 的 HTML：GitHub 没有官方 trending 接口，Search API 只能按总星数排序，和「当下在涨」不是一回事
 - 抓取失败时脚本只打印警告并保留旧快照，不会中断构建；连续失败也不会把文件写空
+- 每天 01:17 UTC（北京时间 09:17）由 `.github/workflows/refresh-trending.yml` 自动重建并发布一次，所以即使很久不写文章，榜单也会保持新鲜。该工作流只发布、不回写仓库（仓库里的快照旧一点不影响线上，下次任何构建的 `prebuild` 都会重新抓）
+- 想让它顺带更新 Cloudflare Workers 那份，在仓库 Secrets 里加上 `CLOUDFLARE_API_TOKEN` 与 `CLOUDFLARE_ACCOUNT_ID`，工作流最后一步会自动部署；没配就跳过
+
+## 双语与 SEO
+
+中文在根目录、英文在 `/en/`；`<name>.md` 与 `<name>.en.md` 共用同一个 URL 段。
+
+- 每页 `<head>` 输出 `canonical` 与 `hreflang`（`zh-CN` / `en` / `x-default`），并且只在目标语种页面真实存在时才声明对方。标签页、未翻译的文章属于「只有一边」的情况，就只声明自身语种
+- sitemap 里的 alternate 由 `astro.config.mjs` 的 `serialize` 按 `dist` 实际产物生成。`@astrojs/sitemap` 内置的 i18n 只按路径前缀推断，会把不存在的翻译也声明出来，所以没有用它
+- `pnpm build` 末尾会跑 `scripts/check-seo.mjs` 做门禁：sitemap 的 alternate 是否成对、是否指向真实页面、每页是否都有 canonical 与自身语种的 hreflang。有问题直接构建失败
+- 单独跑：`pnpm seo:check`（需先构建）
 
 ## 部署（Cloudflare Workers，免费套餐）
 
@@ -114,8 +136,13 @@ npx wrangler deploy   # 首次需先 npx wrangler login
 | `src/content/posts/` | 文章（Markdown） |
 | `src/content/spec/` | 关于页（`about.md` / `about.en.md`） |
 | `src/content/papers/` | 论文（Markdown，模板见 `example-paper.md`） |
+| `src/pages/tags/`、`src/pages/en/tags/` | 标签总览与标签落地页（构建时按 tags 生成） |
+| `src/utils/tag-utils.ts` | 标签 slug 规则、落地页数据 |
+| `src/pages/papers/[slug].astro` | 论文详情页（citation meta + ScholarlyArticle） |
 | `src/data/github-trending.json` | GitHub 趋势快照（由 `scripts/fetch-trending.mjs` 生成） |
 | `scripts/fetch-trending.mjs` | 趋势抓取脚本（`pnpm fetch-trending`） |
+| `scripts/check-seo.mjs` | 构建后的 hreflang / canonical 自检（`pnpm seo:check`） |
+| `.github/workflows/` | `pages.yml` 推送即部署；`refresh-trending.yml` 每天刷新趋势 |
 | `src/pages/projects.astro`、`src/pages/en/projects.astro` | 作品集数据 |
 | `src/assets/images/` | 横幅（`banner.jpg`）与头像（`avatar.jpg`） |
 | `src/layouts/Layout.astro` | 全局脚本（语言开关同步、阅读量填充、swup 钩子） |

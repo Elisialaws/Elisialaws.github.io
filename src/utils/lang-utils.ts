@@ -1,5 +1,7 @@
 import { getLocaleFromUrl, localePath, type Locale } from "@i18n/translation";
 import { findPostBySlug } from "@utils/content-utils";
+import { paperSlugExists } from "@utils/paper-utils";
+import { tagSlugExists } from "@utils/tag-utils";
 import { url } from "@utils/url-utils";
 
 /** Route segments of static pages that exist in both languages */
@@ -9,6 +11,7 @@ const STATIC_ROUTE_SEGMENTS = [
 	"projects",
 	"papers",
 	"trending",
+	"tags",
 ];
 
 /** Strip the locale prefix and normalize to a trailing-slash path */
@@ -22,13 +25,16 @@ function normalizePath(pathname: string, locale: Locale): string {
 	return p;
 }
 
+/** 目标语种缺这一页时的兜底去向 */
+export type FallbackKind = "home" | "tags";
+
 /** Given the canonical (unprefixed) path of the current page, resolve where
  *  the given target locale version of that page lives. Falls back to the
  *  target locale home page when no counterpart exists. */
 async function resolveTargetPath(
 	path: string,
 	target: Locale,
-): Promise<{ path: string; paired: boolean }> {
+): Promise<{ path: string; paired: boolean; fallback?: FallbackKind }> {
 	// Home page or pagination pages: "/" or "/2/"
 	if (path === "/" || /^\/\d+\/$/.test(path)) {
 		return { path: localePath(target, path), paired: true };
@@ -41,7 +47,33 @@ async function resolveTargetPath(
 		if (await findPostBySlug(slug, target)) {
 			return { path: localePath(target, `/posts/${slug}/`), paired: true };
 		}
-		return { path: localePath(target, "/"), paired: false };
+		return { path: localePath(target, "/"), paired: false, fallback: "home" };
+	}
+
+	// Tag landing pages: "/tags/<slug>/" (target locale may lack that tag)
+	const tagMatch = path.match(/^\/tags\/([^/]+)\/$/);
+	if (tagMatch) {
+		const slug = decodeURIComponent(tagMatch[1]);
+		if (await tagSlugExists(target, slug)) {
+			return { path: localePath(target, `/tags/${slug}/`), paired: true };
+		}
+		// 目标语种没有这个标签，退回它的标签总览页。注意 paired 仍是 false：
+		// 两个页面不是同一页的两种语言版本，不能用来声明 hreflang。
+		return { path: localePath(target, "/tags/"), paired: false, fallback: "tags" };
+	}
+
+	// Paper detail pages: "/papers/<slug>/"（论文数据中英共用，两语同时存在）
+	const paperMatch = path.match(/^\/papers\/([^/]+)\/$/);
+	if (paperMatch) {
+		const slug = decodeURIComponent(paperMatch[1]);
+		if (await paperSlugExists(slug)) {
+			return { path: localePath(target, `/papers/${slug}/`), paired: true };
+		}
+		return {
+			path: localePath(target, "/papers/"),
+			paired: false,
+			fallback: "home",
+		};
 	}
 
 	// Static pages: archive / about / projects
@@ -51,7 +83,7 @@ async function resolveTargetPath(
 	}
 
 	// Unknown page: send to the home page of the target locale
-	return { path: localePath(target, "/"), paired: false };
+	return { path: localePath(target, "/"), paired: false, fallback: "home" };
 }
 
 export type LangSwitchSide = {
@@ -86,15 +118,20 @@ export async function getLangSwitchInfo(pathname: string): Promise<LangSwitchInf
 
 	// Tooltip for the other-language segment, worded in the visitor's language
 	const otherSide = current === "zh" ? enResolved : zhResolved;
+	const otherIsTagFallback = !otherSide.paired && otherSide.fallback === "tags";
 	let otherTitle: string;
 	if (current === "zh") {
 		otherTitle = otherSide.paired
 			? "查看英文版"
-			: "暂无英文版，将前往英文首页";
+			: otherIsTagFallback
+				? "该标签暂无英文版，前往英文标签总览"
+				: "暂无英文版，将前往英文首页";
 	} else {
 		otherTitle = otherSide.paired
 			? "View the Chinese version"
-			: "No Chinese version yet, going to the Chinese home page";
+			: otherIsTagFallback
+				? "No English version of this tag, opening the tag index"
+				: "No Chinese version yet, going to the Chinese home page";
 	}
 
 	return {
@@ -112,10 +149,17 @@ export async function getLangSwitchInfo(pathname: string): Promise<LangSwitchInf
 	};
 }
 
+export type AlternateTarget = {
+	/** Root-relative URL of that language's version */
+	url: string;
+	/** Whether it is the real counterpart page (only then is it a hreflang pair) */
+	paired: boolean;
+};
+
 /** Root-relative URLs of the zh / en versions of the current page, for hreflang tags */
 export async function getAlternateUrls(
 	pathname: string,
-): Promise<Record<Locale, string>> {
+): Promise<Record<Locale, AlternateTarget>> {
 	const current = getLocaleFromUrl(pathname);
 	const canonical = normalizePath(pathname, current);
 	const [zhTarget, enTarget] = await Promise.all([
@@ -123,7 +167,7 @@ export async function getAlternateUrls(
 		resolveTargetPath(canonical, "en"),
 	]);
 	return {
-		zh: url(zhTarget.path),
-		en: url(enTarget.path),
+		zh: { url: url(zhTarget.path), paired: zhTarget.paired },
+		en: { url: url(enTarget.path), paired: enTarget.paired },
 	};
 }
