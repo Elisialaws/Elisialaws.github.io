@@ -198,11 +198,29 @@ const liveConfig = {
 
 	const ENDPOINT = "/api/trending";
 	const CACHE_KEY = "xiqian:trending-live:v1";
+	// 这台主机上没有 /api/trending（比如 GitHub Pages）时记一笔，本次会话不再重试
+	const OFF_KEY = "xiqian:trending-live:off";
 	// 站点是静态的，但 Cloudflare Workers 那份会在请求时实时抓取。
 	// 这里的意思是：一小时内不重复请求同一个接口。
 	const CACHE_TTL = 60 * 60 * 1000;
 
 	let inFlight: Promise<LivePayload | null> | null = null;
+
+	function apiDisabled(): boolean {
+		try {
+			return sessionStorage.getItem(OFF_KEY) === "1";
+		} catch {
+			return false;
+		}
+	}
+
+	function disableApi(): void {
+		try {
+			sessionStorage.setItem(OFF_KEY, "1");
+		} catch {
+			// 隐私模式下 sessionStorage 不可写，忽略即可
+		}
+	}
 
 	function readCache(): LivePayload | null {
 		try {
@@ -230,11 +248,19 @@ const liveConfig = {
 	 * 页面保持首屏的构建快照（那边由每天定时构建刷新）。
 	 */
 	async function fetchLive(): Promise<LivePayload | null> {
+		if (apiDisabled()) return null;
 		const cached = readCache();
 		if (cached) return cached;
 		if (!inFlight) {
 			inFlight = fetch(ENDPOINT, { headers: { accept: "application/json" } })
-				.then(async (res) => (res.ok ? ((await res.json()) as LivePayload) : null))
+				.then(async (res) => {
+					if (res.status === 404) {
+						// 这个部署没有接口，别再反复请求
+						disableApi();
+						return null;
+					}
+					return res.ok ? ((await res.json()) as LivePayload) : null;
+				})
 				.catch(() => null)
 				.finally(() => {
 					inFlight = null;
