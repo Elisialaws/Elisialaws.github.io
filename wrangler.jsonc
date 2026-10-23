@@ -12,7 +12,7 @@
 		}
 	],
 	// 纯静态站点 + 阅读量计数 API：静态资源来自 `pnpm build` 生成的 ./dist，
-	// 非静态请求（/api/views/*）交给 worker.ts
+	// 非静态请求（/api/views/*、/api/trending）交给 worker.ts
 	"assets": {
 		"directory": "./dist",
 		// 静态资源绑定：worker.ts 通过 env.ASSETS.fetch() 访问（404 页面等）
@@ -21,5 +21,11 @@
 		"html_handling": "auto-trailing-slash",
 		// 未匹配的路径返回自定义 404 页面（dist/404.html）
 		"not_found_handling": "404-page"
+	},
+	// 定时任务：每天 01:17 UTC（北京时间 09:17，与刷新 GitHub Pages 的
+	// Actions 同一时刻）重建一次趋势缓存，见 worker.ts → refreshTrending()。
+	// 页面访问只读缓存，所以 GitHub 每天只会被我们抓 3 次（三个榜单各一次）。
+	"triggers": {
+		"crons": ["17 1 * * *"]
 	}
 }
