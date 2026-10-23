@@ -13,7 +13,7 @@
 - **明暗主题**：亮色 / 暗色 / 跟随系统（点击式下拉），主题色可调
 - **作品集**：`/projects` 与 `/en/projects`（数据写在页面数组里，直接编辑即可）
 - **论文**：`/papers` 与 `/en/papers`，按年份分组，支持摘要折叠、外部链接与一键复制 BibTeX（内容放 `src/content/papers/`）
-- **GitHub 趋势**：`/trending` 与 `/en/trending`，今日 / 本周 / 本月三档榜单，构建时抓取快照
+- **GitHub 趋势**：`/trending` 与 `/en/trending`，今日 / 本周 / 本月三档榜单。首屏用构建快照（`src/data/github-trending.json`，构建前由 `scripts/fetch-trending.mjs` 抓取），打开页面后再向 Worker 的 `GET /api/trending` 要实时数据并重绘，边缘缓存 1 小时 —— 所以 Cloudflare 那份不用重新部署也会是最新的；GitHub Pages 没有 Worker，退回每日定时构建的快照
 - 响应式布局、RSS、站点地图、自定义双语 404 页
 
 ## 本地开发

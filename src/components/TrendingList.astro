@@ -1,19 +1,12 @@
 ---
+import { getLocaleFromUrl } from "@i18n/translation";
 import { Icon } from "astro-icon/components";
 import trendingData from "../data/github-trending.json";
-import { getLocaleFromUrl } from "@i18n/translation";
-
-export type TrendingRepo = {
-	owner: string;
-	name: string;
-	fullName: string;
-	url: string;
-	description: string;
-	language: string;
-	stars: number;
-	forks: number;
-	gained: number;
-};
+import {
+	renderTrendingRows,
+	type TrendingPeriod,
+	type TrendingRepo,
+} from "../utils/trending.mjs";
 
 interface Props {
 	class?: string;
@@ -23,67 +16,94 @@ const className = Astro.props.class;
 const locale = getLocaleFromUrl(Astro.url.pathname);
 
 const periods = [
-	{ key: "daily" as const, zh: "今日", en: "Today", unitZh: "今日新增", unitEn: "today" },
-	{ key: "weekly" as const, zh: "本周", en: "This week", unitZh: "本周新增", unitEn: "this week" },
-	{ key: "monthly" as const, zh: "本月", en: "This month", unitZh: "本月新增", unitEn: "this month" },
+	{
+		key: "daily" as const,
+		zh: "今日",
+		en: "Today",
+		unitZh: "今日新增",
+		unitEn: "today",
+	},
+	{
+		key: "weekly" as const,
+		zh: "本周",
+		en: "This week",
+		unitZh: "本周新增",
+		unitEn: "this week",
+	},
+	{
+		key: "monthly" as const,
+		zh: "本月",
+		en: "This month",
+		unitZh: "本月新增",
+		unitEn: "this month",
+	},
 ];
-
-const rows: { key: "daily" | "weekly" | "monthly"; items: TrendingRepo[] }[] = periods.map(
-	(p) => ({ key: p.key, items: (trendingData[p.key] ?? []) as TrendingRepo[] }),
-);
-
-const fetchedAt = new Date(trendingData.fetchedAt);
-const fetchedText = new Intl.DateTimeFormat(locale === "en" ? "en-GB" : "zh-CN", {
-	dateStyle: "medium",
-	timeStyle: "short",
-	timeZone: "Asia/Shanghai",
-}).format(fetchedAt);
 
 const t = {
 	title: locale === "en" ? "GitHub Trending" : "GitHub 趋势",
 	intro:
 		locale === "en"
-			? "Repositories climbing the GitHub charts right now. The snapshot is taken when the site is built, so it updates on every deploy."
-			: "正在 GitHub 上冒头的仓库。榜单在站点构建时抓取，每次部署都会更新。",
-	snapshot: locale === "en" ? "Snapshot" : "数据快照",
-	empty: locale === "en" ? "No snapshot for this period yet." : "这一档还没有抓到数据。",
+			? "Repositories climbing the GitHub charts right now. Fetched live when the page opens and cached for an hour at most; the build-time snapshot is the fallback."
+			: "正在 GitHub 上冒头的仓库。打开页面时实时抓取，最多缓存一小时；抓不到就退回构建时的快照。",
+	// 首屏（还没拿到实时数据时）显示的是构建快照
+	snapshot: locale === "en" ? "Build snapshot" : "构建快照",
+	updated: locale === "en" ? "Updated" : "更新于",
+	empty:
+		locale === "en"
+			? "No snapshot for this period yet."
+			: "这一档还没有抓到数据。",
 	viewAll: locale === "en" ? "Open GitHub Trending" : "打开 GitHub Trending",
 	stars: locale === "en" ? "stars" : "星",
 	forks: locale === "en" ? "forks" : "分叉",
 };
 
-const langColors: Record<string, string> = {
-	TypeScript: "#3178c6",
-	JavaScript: "#f1e05a",
-	Python: "#3572A5",
-	Rust: "#dea584",
-	Go: "#00ADD8",
-	C: "#555555",
-	"C++": "#f34b7d",
-	"C#": "#178600",
-	Java: "#b07219",
-	Kotlin: "#A97BFF",
-	Swift: "#F05138",
-	Ruby: "#701516",
-	PHP: "#4F5D95",
-	Shell: "#89e051",
-	HTML: "#e34c26",
-	CSS: "#563d7c",
-	Vue: "#41b883",
-	Svelte: "#ff3e00",
-	Dart: "#00B4AB",
-	Zig: "#ec915c",
-	Lua: "#000080",
-	Elixir: "#6e4a7e",
-	Haskell: "#5e5086",
-	Jupyter: "#DA5B0B",
-	"Jupyter Notebook": "#DA5B0B",
-};
+const unitOf = (key: TrendingPeriod) =>
+	locale === "en"
+		? periods.find((p) => p.key === key)?.unitEn
+		: periods.find((p) => p.key === key)?.unitZh;
 
-const fmt = (n: number) => new Intl.NumberFormat("en-US").format(n);
+// 首屏与前端拿到实时数据后用的是同一个渲染函数（src/utils/trending.mjs），
+// 两边结构不会走样。
+const rows = periods.map((p) => ({
+	key: p.key,
+	html: renderTrendingRows((trendingData[p.key] ?? []) as TrendingRepo[], {
+		unit: unitOf(p.key),
+		empty: t.empty,
+		stars: t.stars,
+		forks: t.forks,
+	}),
+}));
+
+const fetchedAt = new Date(trendingData.fetchedAt);
+const fetchedText = new Intl.DateTimeFormat(
+	locale === "en" ? "en-GB" : "zh-CN",
+	{
+		dateStyle: "medium",
+		timeStyle: "short",
+		timeZone: "Asia/Shanghai",
+	},
+).format(fetchedAt);
+
+// 交给前端脚本：文案 + 各档口径（单位不同，客户端重绘时要用）
+const liveConfig = {
+	locale,
+	units: {
+		daily: unitOf("daily"),
+		weekly: unitOf("weekly"),
+		monthly: unitOf("monthly"),
+	},
+	labels: { empty: t.empty, stars: t.stars, forks: t.forks },
+	snapshot: t.snapshot,
+	updated: t.updated,
+};
 ---
 
-<div class:list={[className, "flex flex-col gap-4 mb-4"]}>
+<div
+	class:list={[className, "flex flex-col gap-4 mb-4"]}
+	data-trending-root
+	data-trending-snapshot={trendingData.fetchedAt}
+	data-trending-config={JSON.stringify(liveConfig)}
+>
 	<div class="card-base rounded-[var(--radius-large)] px-6 py-5 md:px-9 md:py-7 onload-animation">
 		<div class="flex flex-wrap items-start justify-between gap-4">
 			<div class="min-w-0">
@@ -137,8 +157,13 @@ const fmt = (n: number) => new Intl.NumberFormat("en-US").format(n);
 					</button>
 				))}
 			</div>
-			<div class="text-xs text-50 ml-auto">
-				{t.snapshot} · {fetchedText}
+			<div class="text-xs text-50 ml-auto flex items-center gap-1.5">
+				<span
+					data-trending-live-dot
+					class="w-1.5 h-1.5 rounded-full bg-[var(--primary)]"
+					style="display: none"
+				></span>
+				<span data-trending-updated>{t.snapshot} · {fetchedText}</span>
 			</div>
 		</div>
 	</div>
@@ -148,90 +173,136 @@ const fmt = (n: number) => new Intl.NumberFormat("en-US").format(n);
 			data-trending-panel={row.key}
 			style={rowIndex === 0 ? undefined : "display: none"}
 			class="flex flex-col gap-2"
-		>
-			{row.items.length === 0 && (
-				<div class="card-base rounded-[var(--radius-large)] p-8 text-center text-75 text-sm">
-					{t.empty}
-				</div>
-			)}
-			{row.items.map((repo, index) => {
-				const unit =
-					locale === "en"
-						? periods.find((p) => p.key === row.key)?.unitEn
-						: periods.find((p) => p.key === row.key)?.unitZh;
-				return (
-					<a
-						href={repo.url}
-						target="_blank"
-						rel="noopener"
-						class="card-base rounded-[var(--radius-large)] px-4 py-3.5 md:px-5 flex gap-3.5 group transition"
-					>
-						<div class="w-7 shrink-0 pt-0.5 text-center">
-							<span class:list={[
-								"text-sm font-bold tabular-nums",
-								index < 3 ? "text-[var(--primary)]" : "text-50",
-							]}>
-								{index + 1}
-							</span>
-						</div>
-						<img
-							src={`https://github.com/${repo.owner}.png?size=64`}
-							alt=""
-							loading="lazy"
-							width="32"
-							height="32"
-							class="w-8 h-8 rounded-lg shrink-0 bg-black/[0.04] dark:bg-white/[0.08]"
-						/>
-						<div class="min-w-0 flex-1">
-							<div class="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-								<span class="font-bold text-[0.95rem] text-90 truncate transition group-hover:text-[var(--primary)]">
-									{repo.fullName}
-								</span>
-								{repo.gained > 0 && (
-									<span class="text-xs font-semibold text-[var(--primary)] tabular-nums">
-										+{fmt(repo.gained)}
-										<span class="text-50 font-normal ml-1">{unit}</span>
-									</span>
-								)}
-							</div>
-							{repo.description && (
-								<div class="text-75 text-sm mt-1 line-clamp-2 leading-relaxed">
-									{repo.description}
-								</div>
-							)}
-							<div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-xs text-50">
-								{repo.language && (
-									<span class="flex items-center gap-1.5">
-										<span
-											class="w-2.5 h-2.5 rounded-full"
-											style={`background-color: ${langColors[repo.language] ?? "#8b949e"}`}
-										/>
-										{repo.language}
-									</span>
-								)}
-								<span class="flex items-center gap-1 tabular-nums">
-									<Icon name="fa6-solid:star" class="text-[0.7rem]" />
-									{fmt(repo.stars)}
-									<span class="sr-only">{t.stars}</span>
-								</span>
-								<span class="flex items-center gap-1 tabular-nums">
-									<Icon
-										name="fa6-solid:code-fork"
-										class="text-[0.7rem]"
-									/>
-									{fmt(repo.forks)}
-									<span class="sr-only">{t.forks}</span>
-								</span>
-							</div>
-						</div>
-					</a>
-				);
-			})}
-		</div>
+			set:html={row.html}
+		></div>
 	))}
 </div>
 
 <script>
+	import { renderTrendingRows, type TrendingPeriod, type TrendingRepo } from "../utils/trending.mjs";
+
+	type LiveConfig = {
+		locale: string;
+		units: Record<string, string>;
+		labels: { empty: string; stars: string; forks: string };
+		snapshot: string;
+		updated: string;
+	};
+
+	type LivePayload = {
+		fetchedAt: string;
+		daily?: TrendingRepo[];
+		weekly?: TrendingRepo[];
+		monthly?: TrendingRepo[];
+	};
+
+	const ENDPOINT = "/api/trending";
+	const CACHE_KEY = "xiqian:trending-live:v1";
+	// 站点是静态的，但 Cloudflare Workers 那份会在请求时实时抓取。
+	// 这里的意思是：一小时内不重复请求同一个接口。
+	const CACHE_TTL = 60 * 60 * 1000;
+
+	let inFlight: Promise<LivePayload | null> | null = null;
+
+	function readCache(): LivePayload | null {
+		try {
+			const raw = sessionStorage.getItem(CACHE_KEY);
+			if (!raw) return null;
+			const parsed = JSON.parse(raw) as { at: number; data: LivePayload };
+			if (!parsed?.data || Date.now() - parsed.at > CACHE_TTL) return null;
+			return parsed.data;
+		} catch {
+			return null;
+		}
+	}
+
+	function writeCache(data: LivePayload): void {
+		try {
+			sessionStorage.setItem(CACHE_KEY, JSON.stringify({ at: Date.now(), data }));
+		} catch {
+			// 隐私模式下 sessionStorage 不可写，忽略即可
+		}
+	}
+
+	/**
+	 * 拿实时榜单。
+	 * GitHub Pages 上没有 Worker，/api/trending 会 404 —— 此时返回 null，
+	 * 页面保持首屏的构建快照（那边由每天定时构建刷新）。
+	 */
+	async function fetchLive(): Promise<LivePayload | null> {
+		const cached = readCache();
+		if (cached) return cached;
+		if (!inFlight) {
+			inFlight = fetch(ENDPOINT, { headers: { accept: "application/json" } })
+				.then(async (res) => (res.ok ? ((await res.json()) as LivePayload) : null))
+				.catch(() => null)
+				.finally(() => {
+					inFlight = null;
+				});
+		}
+		const data = await inFlight;
+		if (data?.fetchedAt) writeCache(data);
+		return data;
+	}
+
+	function formatTime(iso: string, locale: string): string {
+		const date = new Date(iso);
+		if (Number.isNaN(date.getTime())) return "";
+		return new Intl.DateTimeFormat(locale === "en" ? "en-GB" : "zh-CN", {
+			dateStyle: "medium",
+			timeStyle: "short",
+			timeZone: "Asia/Shanghai",
+		}).format(date);
+	}
+
+	function readConfig(root: HTMLElement): LiveConfig | null {
+		const raw = root.dataset.trendingConfig;
+		if (!raw) return null;
+		try {
+			return JSON.parse(raw) as LiveConfig;
+		} catch {
+			return null;
+		}
+	}
+
+	/** 用实时数据重绘三档列表；数据比首屏快照更旧的话就什么都不做 */
+	async function upgradeToLive(): Promise<void> {
+		const root = document.querySelector<HTMLElement>("[data-trending-root]");
+		if (!root) return;
+		const config = readConfig(root);
+		if (!config) return;
+
+		const data = await fetchLive();
+		if (!data?.fetchedAt) return;
+
+		const snapshotAt = new Date(root.dataset.trendingSnapshot ?? 0).getTime();
+		if (new Date(data.fetchedAt).getTime() <= snapshotAt) return;
+
+		let painted = 0;
+		for (const key of ["daily", "weekly", "monthly"] as TrendingPeriod[]) {
+			const items = data[key];
+			if (!Array.isArray(items) || items.length === 0) continue;
+			const panel = root.querySelector<HTMLElement>(
+				`[data-trending-panel="${key}"]`,
+			);
+			if (!panel) continue;
+			panel.innerHTML = renderTrendingRows(items, {
+				unit: config.units[key],
+				...config.labels,
+			});
+			painted += 1;
+		}
+		if (!painted) return;
+
+		// 计数说清楚现在是实时数据，而不是构建快照
+		const label = root.querySelector<HTMLElement>("[data-trending-updated]");
+		if (label) {
+			label.textContent = `${config.updated} · ${formatTime(data.fetchedAt, config.locale)}`;
+		}
+		const dot = root.querySelector<HTMLElement>("[data-trending-live-dot]");
+		if (dot) dot.style.display = "";
+	}
+
 	// 文档级事件委托：swup 换页后无需重新绑定
 	function activate(key: string) {
 		const buttons = document.querySelectorAll<HTMLButtonElement>(
@@ -265,4 +336,14 @@ const fmt = (n: number) => new Intl.NumberFormat("en-US").format(n);
 		event.preventDefault();
 		activate(button.dataset.trendingTab);
 	});
+
+	upgradeToLive();
+
+	// swup 换页后重新进入趋势页时补一次（第一次已在上面的调用里处理）
+	const swup = (
+		window as unknown as {
+			swup?: { hooks: { on: (event: string, cb: () => void) => void } };
+		}
+	).swup;
+	swup?.hooks?.on("page:view", upgradeToLive);
 </script>

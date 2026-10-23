@@ -1,112 +1,26 @@
 // 抓取 GitHub Trending 榜单，生成 src/data/github-trending.json
 //
 // 用法：node scripts/fetch-trending.mjs [--limit=20]
-// 构建前手动跑一次即可；抓取失败时保留上一次的快照，不会让构建挂掉。
+// 构建前自动跑一次（见 package.json 的 prebuild）；抓取失败时保留上一次的
+// 快照，不会让构建挂掉。
 //
-// 为什么抓 HTML 而不是用 API：GitHub 没有官方的 trending 接口，
-// Search API 只能按 stars 排序（等于「最热的仓库」而不是「当下在涨的仓库」），
-// 和 trending 页的语义差得很远。这个页面结构十几年没大变，正则够用。
+// 解析与抓取逻辑都在 src/utils/trending.mjs，和 worker.ts 的 /api/trending
+// 共用同一份代码，避免两边对页面结构的理解跑偏。
 
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+	fetchTrendingPeriod,
+	TRENDING_PERIODS,
+	TRENDING_SOURCE,
+} from "../src/utils/trending.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT_FILE = resolve(__dirname, "../src/data/github-trending.json");
 
-const PERIODS = ["daily", "weekly", "monthly"];
-const PERIOD_LABEL = {
-	daily: "stars today",
-	weekly: "stars this week",
-	monthly: "stars this month",
-};
-
 const limitArg = process.argv.find((a) => a.startsWith("--limit="));
 const LIMIT = limitArg ? Number(limitArg.split("=")[1]) : 20;
-
-const UA =
-	"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
-	"(KHTML, like Gecko) Chrome/124.0 Safari/537.36";
-
-function stripTags(html) {
-	return html
-		.replace(/<svg[\s\S]*?<\/svg>/g, " [svg] ")
-		.replace(/<[^>]+>/g, " ")
-		.replace(/&nbsp;/g, " ")
-		.replace(/&amp;/g, "&")
-		.replace(/&quot;/g, '"')
-		.replace(/&#39;/g, "'")
-		.replace(/&lt;/g, "<")
-		.replace(/&gt;/g, ">")
-		.replace(/\s+/g, " ")
-		.trim();
-}
-
-function toNumber(text) {
-	if (!text) return 0;
-	return Number(text.replace(/,/g, "")) || 0;
-}
-
-/** 解析一个 <article class="Box-row"> 块 */
-function parseArticle(block) {
-	const text = stripTags(block);
-
-	// 仓库名：h2 里的第一个 /owner/repo 链接
-	const repoMatch = block.match(
-		/<h2 class="h3 lh-condensed">[\s\S]*?href="\/([^/"?#]+)\/([^/"?#]+)"/,
-	);
-	if (!repoMatch) return null;
-	const [, owner, name] = repoMatch;
-
-	const descMatch = block.match(
-		/<p class="col-9 color-fg-muted my-1[^"]*">([\s\S]*?)<\/p>/,
-	);
-	const description = descMatch ? stripTags(descMatch[1]) : "";
-
-	const langMatch = block.match(
-		/<span itemprop="programmingLanguage">([^<]+)<\/span>/,
-	);
-	const language = langMatch ? langMatch[1].trim() : "";
-
-	// 纯文本里依次出现：总 stars、forks、...+N stars today/this week/this month
-	const statsMatch = text.match(
-		/\[svg\]\s*([\d,]+)\s*\[svg\]\s*([\d,]+)/,
-	);
-	const gainedMatch = text.match(/([\d,]+)\s+stars?\s+(today|this week|this month)/);
-
-	return {
-		owner,
-		name,
-		fullName: `${owner}/${name}`,
-		url: `https://github.com/${owner}/${name}`,
-		description,
-		language,
-		stars: statsMatch ? toNumber(statsMatch[1]) : 0,
-		forks: statsMatch ? toNumber(statsMatch[2]) : 0,
-		gained: gainedMatch ? toNumber(gainedMatch[1]) : 0,
-	};
-}
-
-async function fetchPeriod(period) {
-	const url = `https://github.com/trending?since=${period}`;
-	const res = await fetch(url, {
-		headers: { "User-Agent": UA, "Accept-Language": "en-US,en;q=0.9" },
-		signal: AbortSignal.timeout(15_000),
-	});
-	if (!res.ok) throw new Error(`${period}: HTTP ${res.status}`);
-
-	const html = await res.text();
-	const blocks = html.match(/<article class="Box-row">[\s\S]*?<\/article>/g) ?? [];
-	const items = blocks
-		.map(parseArticle)
-		.filter(Boolean)
-		.slice(0, LIMIT);
-
-	if (items.length < 5) {
-		throw new Error(`${period}: 只解析出 ${items.length} 条，页面结构可能变了`);
-	}
-	return items;
-}
 
 async function readSnapshot() {
 	try {
@@ -126,16 +40,16 @@ async function main() {
 	const previous = await readSnapshot();
 	const snapshot = {
 		fetchedAt: new Date().toISOString(),
-		source: "https://github.com/trending",
+		source: TRENDING_SOURCE,
 		daily: previous?.daily ?? [],
 		weekly: previous?.weekly ?? [],
 		monthly: previous?.monthly ?? [],
 	};
 
 	let ok = 0;
-	for (const period of PERIODS) {
+	for (const period of TRENDING_PERIODS) {
 		try {
-			snapshot[period] = await fetchPeriod(period);
+			snapshot[period] = await fetchTrendingPeriod(period, { limit: LIMIT });
 			ok += 1;
 			console.log(
 				`✓ ${period}: ${snapshot[period].length} 条，榜首 ${snapshot[period][0]?.fullName}`,
@@ -151,9 +65,12 @@ async function main() {
 	}
 
 	await mkdir(dirname(OUT_FILE), { recursive: true });
-	await writeFile(OUT_FILE, `${JSON.stringify(snapshot, null, "\t")}\n`, "utf8");
+	await writeFile(
+		OUT_FILE,
+		`${JSON.stringify(snapshot, null, "\t")}\n`,
+		"utf8",
+	);
 	console.log(`→ 写入 ${OUT_FILE}`);
-	console.log(`  ${PERIOD_LABEL.daily} / ${PERIOD_LABEL.weekly} / ${PERIOD_LABEL.monthly}`);
 }
 
 main().catch((error) => {

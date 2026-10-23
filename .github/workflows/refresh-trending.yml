@@ -7,8 +7,9 @@
 # - 只发布，不回写仓库。下次任何一次构建的 prebuild 都会重新抓取，所以
 #   仓库里的快照旧一点不影响线上；这样可以避免每天一条自动提交。
 # - 与 pages.yml 共用 concurrency group "pages"，两边不会并发部署。
-# - 想同时更新 Cloudflare Workers 那份，在仓库 Secrets 里加
-#   CLOUDFLARE_API_TOKEN 和 CLOUDFLARE_ACCOUNT_ID 即可，最后一步会自动执行。
+# - Cloudflare Workers 那份不用等这里：页面的 /api/trending 在请求时现场抓取
+#   （边缘缓存 1 小时），所以它一直是当下的榜单。这一步顺带把静态快照也刷一遍，
+#   需要仓库 Secrets 里有 CLOUDFLARE_API_TOKEN 和 CLOUDFLARE_ACCOUNT_ID。
 name: Refresh GitHub Trending
 
 on:
